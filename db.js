@@ -1,11 +1,13 @@
 // Supabase database configuration and operations module
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-let supabase = null;
+// Default Supabase credentials for the project (fallback)
+const DEFAULT_URL = 'https://vrkvqxlzuaxupfxwajzr.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_8vkn-jVX6VlurrUAAIXYhA_Bul-IYCM';
 
-// Try to initialize supabase from localStorage
-const cachedUrl = localStorage.getItem('FITNESS_SUPABASE_URL');
-const cachedKey = localStorage.getItem('FITNESS_SUPABASE_KEY');
+const isDisconnected = localStorage.getItem('FITNESS_DISCONNECTED') === 'true';
+const cachedUrl = isDisconnected ? localStorage.getItem('FITNESS_SUPABASE_URL') : (localStorage.getItem('FITNESS_SUPABASE_URL') || DEFAULT_URL);
+const cachedKey = isDisconnected ? localStorage.getItem('FITNESS_SUPABASE_KEY') : (localStorage.getItem('FITNESS_SUPABASE_KEY') || DEFAULT_KEY);
 
 if (cachedUrl && cachedKey) {
   try {
@@ -25,6 +27,7 @@ export function setConfig(url, key) {
     createClient(url, key); // Test initialization
     localStorage.setItem('FITNESS_SUPABASE_URL', url);
     localStorage.setItem('FITNESS_SUPABASE_KEY', key);
+    localStorage.setItem('FITNESS_DISCONNECTED', 'false'); // Reset disconnect flag
     supabase = createClient(url, key);
     return true;
   } catch (e) {
@@ -40,6 +43,7 @@ export function clearConfig() {
   localStorage.removeItem('MOCK_PARTICIPANTS');
   localStorage.removeItem('MOCK_CHALLENGES');
   localStorage.removeItem('MOCK_ACTIVITIES');
+  localStorage.setItem('FITNESS_DISCONNECTED', 'true'); // Set disconnect flag
   supabase = null;
 }
 
