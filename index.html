@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Acompanhe e valide o progresso de flexões de braço e corridas no desafio fitness entre amigos em tempo real.">
+  <title>Desafio Fitness - Flexões & Corrida</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Chart.js & Lucide CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Admin Active Top Banner -->
+  <div class="admin-banner" id="admin-banner">
+    <i data-lucide="shield-check"></i> Modo Administrador Ativo — Acesso de Gravação Liberado
+  </div>
+
+  <!-- App Main Container -->
+  <div id="app">
+    
+    <!-- Navigation / Header -->
+    <header>
+      <div class="nav-container">
+        <a href="#" class="logo" id="app-logo">
+          <i data-lucide="dumbbell"></i>
+          <span>Desafio Fitness</span>
+        </a>
+        <nav class="nav-user">
+          <button class="btn-admin-trigger" id="btn-admin-trigger" aria-label="Área do Administrador">
+            <i data-lucide="shield"></i> <span id="admin-btn-text">Área do Admin</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main>
+      
+      <!-- Top Title and Challenge Selector -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800;">Painel de Performance</h1>
+        
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <!-- Challenge Selector Dropdown -->
+          <div class="challenge-selector-container">
+            <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+            <select class="challenge-select" id="challenge-selector" aria-label="Selecionar Desafio">
+              <!-- Dynamically populated with active and past challenges -->
+            </select>
+          </div>
+          
+          <button class="btn btn-sm" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color);" aria-label="Desconectar banco de dados">
+            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Desconectar Banco
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Leaders Podium (Prizes Highlight) -->
+      <section id="challenge-goals-card" aria-label="Líderes Atuais e Premiação">
+        <div class="leaders-grid">
+          <!-- Pushup Leader Card -->
+          <div class="leader-podium-card pushup-leader">
+            <div class="leader-trophy">
+              <i data-lucide="dumbbell"></i>
+            </div>
+            <div class="leader-podium-info">
+              <div class="leader-podium-label">
+                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Flexões (Brinde 🎁)
+              </div>
+              <div class="leader-podium-name" id="pushup-leader-name">Ninguém ainda</div>
+              <div class="leader-podium-value" id="pushup-leader-value">Total: <strong>0</strong> reps</div>
+            </div>
+          </div>
+          
+          <!-- Running Leader Card -->
+          <div class="leader-podium-card running-leader">
+            <div class="leader-trophy">
+              <i data-lucide="footprints"></i>
+            </div>
+            <div class="leader-podium-info">
+              <div class="leader-podium-label">
+                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Corrida (Brinde 🎁)
+              </div>
+              <div class="leader-podium-name" id="running-leader-name">Ninguém ainda</div>
+              <div class="leader-podium-value" id="running-leader-value">Total: <strong>0</strong> km</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty State for inactive challenge -->
+      <section class="card" id="no-challenge-card" style="display: none; padding: 3rem; text-align: center;">
+        <div class="empty-state">
+          <i data-lucide="calendar-x" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+          <h3 style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Nenhum Desafio Ativo</h3>
+          <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem auto;">
+            Não há nenhum desafio ativo no momento. Peça ao administrador para iniciar um novo período de desafio!
+          </p>
+          <button class="btn btn-primary admin-only" id="btn-no-challenge-create" style="display: none;">
+            <i data-lucide="plus-circle"></i> Iniciar Primeiro Desafio
+          </button>
+        </div>
+      </section>
+
+      <!-- Overall Numbers Grid -->
+      <section class="summary-grid" id="stats-summary-grid" aria-label="Estatísticas Gerais">
+        <div class="card stat-card purple">
+          <div class="stat-info">
+            <h3>Flexões Registradas</h3>
+            <span class="stat-value" id="total-pushups-value">0</span>
+          </div>
+          <div class="stat-icon">
+            <i data-lucide="dumbbell"></i>
+          </div>
+        </div>
+
+        <div class="card stat-card cyan">
+          <div class="stat-info">
+            <h3>Corridas (Distância)</h3>
+            <span class="stat-value" id="total-distance-value">0 km</span>
+          </div>
+          <div class="stat-icon">
+            <i data-lucide="footprints"></i>
+          </div>
+        </div>
+
+        <div class="card stat-card emerald">
+          <div class="stat-info">
+            <h3>Participantes</h3>
+            <span class="stat-value" id="active-participants-value">0</span>
+          </div>
+          <div class="stat-icon">
+            <i data-lucide="users"></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard Columns Split -->
+      <div class="dashboard-layout" id="dashboard-main-layout">
+        
+        <!-- Left Side: Leaderboard & Chart -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+          
+          <!-- Rankings -->
+          <section class="card" aria-labelledby="leaderboard-title">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+              <h2 id="leaderboard-title" class="section-title" style="margin: 0;"><i data-lucide="award"></i> Classificação Geral</h2>
+              
+              <!-- Admin Only Actions in Rankings Header -->
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary admin-only" id="btn-open-log" style="display: none;" aria-label="Lançar nova atividade">
+                  <i data-lucide="plus"></i> Lançar Atividade
+                </button>
+                <button class="btn admin-only" id="btn-open-participant" style="display: none;" aria-label="Cadastrar novo participante">
+                  <i data-lucide="user-plus"></i> Novo Participante
+                </button>
+                <button class="btn admin-only" id="btn-open-challenge" style="display: none;" aria-label="Gerenciar desafios">
+                  <i data-lucide="settings"></i> Desafios
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="leaderboard-tabs" role="tablist">
+              <button class="tab-btn active active-purple" id="tab-pushups" role="tab" aria-selected="true" aria-controls="leaderboard-list">
+                <i data-lucide="dumbbell"></i> Flexões
+              </button>
+              <button class="tab-btn" id="tab-running" role="tab" aria-selected="false" aria-controls="leaderboard-list">
+                <i data-lucide="footprints"></i> Corrida
+              </button>
+            </div>
+
+            <!-- Leaderboard Items Container -->
+            <div class="leaderboard-list" id="leaderboard-list">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- History Chart -->
+          <section class="card" aria-labelledby="history-chart-title">
+            <h2 id="history-chart-title" class="section-title"><i data-lucide="trending-up"></i> Histórico do Desafio</h2>
+            <div style="height: 300px; position: relative;">
+              <canvas id="history-chart"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Side: Activities Feed -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+          <!-- Recent Activities -->
+          <section class="card" aria-labelledby="feed-title">
+            <h2 id="feed-title" class="section-title"><i data-lucide="activity"></i> Atividades Recentes</h2>
+            <div class="feed-list" id="recent-activities-list">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- MODAL: Admin Authentication / Password setup -->
+  <div class="modal-overlay" id="modal-admin-login" role="dialog" aria-modal="true" aria-labelledby="modal-admin-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-admin-title">Área do Administrador</h3>
+        <button class="close-btn" id="btn-close-admin-login" aria-label="Fechar Modal">&times;</button>
+      </div>
+      
+      <form id="form-admin-login">
+        <!-- Normal Credentials Prompt -->
+        <div id="login-credentials-group">
+          <div class="form-group">
+            <label for="admin-username">Usuário Administrador</label>
+            <input type="text" id="admin-username" placeholder="Ex: admin">
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Senha de Acesso</label>
+            <input type="password" id="admin-password" placeholder="Digite a senha administrativa...">
+          </div>
+        </div>
+
+        <!-- First-time Setup Password Prompt -->
+        <div id="setup-credentials-info" style="display: none; margin-bottom: 1.25rem;">
+          <p style="font-size: 0.85rem; color: var(--accent-amber); margin-bottom: 1rem; line-height: 1.45;">
+            <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px;"></i> Esta é a primeira vez que você acessa o painel neste banco. Crie as credenciais mestras de administrador:
+          </p>
+          <div class="form-group">
+            <label for="admin-setup-username">Criar Nome de Usuário</label>
+            <input type="text" id="admin-setup-username" placeholder="Ex: admin" minlength="3">
+          </div>
+          <div class="form-group">
+            <label for="admin-setup-password">Criar Senha Administrativa</label>
+            <input type="password" id="admin-setup-password" placeholder="Mínimo de 4 caracteres" minlength="4">
+          </div>
+          <div class="form-group">
+            <label for="admin-setup-password-confirm">Confirmar Senha</label>
+            <input type="password" id="admin-setup-password-confirm" placeholder="Confirme a senha anterior" minlength="4">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btn-admin-submit">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Manage Challenges -->
+  <div class="modal-overlay" id="modal-manage-challenges" role="dialog" aria-modal="true" aria-labelledby="modal-challenge-title">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-challenge-title">Gerenciar Desafios</h3>
+        <button class="close-btn" id="btn-close-challenge" aria-label="Fechar Modal">&times;</button>
+      </div>
+      
+      <!-- Current Challenge Status & Finish Button -->
+      <div id="active-challenge-admin-info" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(139, 92, 246, 0.05); border: 1px dashed var(--accent-purple); border-radius: var(--radius-sm); display: none; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);" id="active-challenge-admin-name">Nenhum</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);" id="active-challenge-admin-dates">Período: -</div>
+        </div>
+        <button class="btn btn-sm btn-reject" id="btn-finish-challenge" type="button">Encerrar Desafio</button>
+      </div>
+
+      <!-- Create New Challenge Form -->
+      <form id="form-create-challenge">
+        <h4 style="font-family: var(--font-title); font-size: 1rem; margin-bottom: 1rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Iniciar Novo Desafio
+        </h4>
+        
+        <div class="form-group">
+          <label for="new-challenge-name">Nome do Desafio</label>
+          <input type="text" id="new-challenge-name" placeholder="Ex: Desafio da Primavera" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="new-challenge-start">Data de Início</label>
+            <input type="date" id="new-challenge-start" required>
+          </div>
+          <div class="form-group">
+            <label for="new-challenge-end">Data de Fim</label>
+            <input type="date" id="new-challenge-end" required>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">Criar e Ativar Desafio</button>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-align: center; margin-top: 0.5rem;">
+          Ao ativar, qualquer outro desafio ativo será encerrado.
+        </span>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Register Participant -->
+  <div class="modal-overlay" id="modal-create-participant" role="dialog" aria-modal="true" aria-labelledby="modal-participant-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-participant-title">Cadastrar Participante</h3>
+        <button class="close-btn" id="btn-close-participant" aria-label="Fechar Modal">&times;</button>
+      </div>
+      
+      <form id="form-create-participant">
+        <div class="form-group">
+          <label for="new-participant-name">Nome do Participante</label>
+          <input type="text" id="new-participant-name" placeholder="Ex: Carlos Santos" required maxlength="20">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Salvar Participante</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Log Activity (Admin Area) -->
+  <div class="modal-overlay" id="modal-log-activity" role="dialog" aria-modal="true" aria-labelledby="modal-log-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-log-title">Registrar Atividade</h3>
+        <button class="close-btn" id="btn-close-log" aria-label="Fechar Modal">&times;</button>
+      </div>
+      
+      <form id="form-log-activity">
+        <!-- Participant Selector -->
+        <div class="form-group">
+          <label for="log-participant">Participante</label>
+          <select id="log-participant" required>
+            <!-- Dynamically populated with all participants -->
+          </select>
+        </div>
+
+        <!-- Activity Date (Default: Today) -->
+        <div class="form-group">
+          <label for="log-date">Data do Exercício</label>
+          <input type="date" id="log-date" required>
+        </div>
+
+        <!-- Activity Type Selector -->
+        <div class="form-group">
+          <label for="log-type">Tipo de Exercício</label>
+          <select id="log-type" required>
+            <option value="pushup">Flexões de Braço (Push-ups)</option>
+            <option value="running">Corrida (Running)</option>
+          </select>
+        </div>
+
+        <!-- PUSHUPS INPUTS -->
+        <div id="log-pushup-fields">
+          <div class="form-group">
+            <label for="pushups-count">Quantidade de Repetições</label>
+            <input type="number" id="pushups-count" min="1" placeholder="Ex: 40" required>
+          </div>
+          <div class="form-group">
+            <label for="log-validator">Testemunha / Validador (Opcional)</label>
+            <select id="log-validator">
+              <!-- Populated with other participants -->
+            </select>
+          </div>
+        </div>
+
+        <!-- RUNNING INPUTS (Hidden by default) -->
+        <div id="log-running-fields" style="display: none;">
+          <div class="form-group">
+            <label for="running-distance">Distância (em km)</label>
+            <input type="number" id="running-distance" min="0.01" step="0.01" placeholder="Ex: 6.5">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="running-min">Tempo - Minutos</label>
+              <input type="number" id="running-min" min="0" max="599" placeholder="Ex: 35">
+            </div>
+            <div class="form-group">
+              <label for="running-sec">Tempo - Segundos</label>
+              <input type="number" id="running-sec" min="0" max="59" placeholder="Ex: 0">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">Salvar Registro</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SETUP OVERLAY (DB Configuration on First Load) -->
+  <div class="setup-overlay" id="setup-overlay">
+    <div class="setup-container">
+      <h2 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 2rem; background: linear-gradient(135deg, #ffffff 40%, var(--accent-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Configurar Banco de Dados
+      </h2>
+      
+      <div class="setup-steps">
+        <!-- STEP 1 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h3 style="font-weight: 700; font-size: 1rem;">Criar Tabelas no Supabase</h3>
+          </div>
+          <p class="setup-instructions">
+            Crie um projeto gratuito no <a href="https://supabase.com" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">Supabase</a>. 
+            No painel, clique em <strong>SQL Editor</strong>, crie uma <strong>New Query</strong>, cole o código abaixo e clique em <strong>Run</strong>:
+          </p>
+          <pre><code>-- Criação das tabelas para o Desafio Fitness
+CREATE TABLE public.challenges (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'finished')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.participants (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.activities (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
+    participant_id UUID NOT NULL REFERENCES public.participants(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('pushup', 'running')),
+    amount NUMERIC NOT NULL,
+    duration INTEGER,
+    pace NUMERIC,
+    validator_id UUID REFERENCES public.participants(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+    date DATE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- Ativar tabelas em tempo real
+ALTER PUBLICATION supabase_realtime ADD TABLE public.challenges;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.participants;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.activities;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.settings;</code></pre>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h3 style="font-weight: 700; font-size: 1rem;">Conectar a Aplicação</h3>
+          </div>
+          <p class="setup-instructions" style="margin-bottom: 1rem;">
+            Vá em <strong>Project Settings > API</strong> no Supabase e cole os dados abaixo:
+          </p>
+          <form id="setup-form">
+            <div class="form-group">
+              <label for="supabase-url">Project URL (API URL)</label>
+              <input type="url" id="supabase-url" placeholder="https://xxxxxxxxxxxxxx.supabase.co" required>
+            </div>
+            <div class="form-group">
+              <label for="supabase-key">API Key (anon public)</label>
+              <input type="text" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+            </div>
+            <button type="submit" class="btn btn-cyan btn-block" style="margin-top: 0.5rem;">Salvar e Conectar</button>
+            <button type="button" class="btn btn-block" id="btn-demo-mode" style="margin-top: 0.75rem; border-color: rgba(139, 92, 246, 0.4); color: var(--accent-purple);">
+              <i data-lucide="sparkles"></i> Experimentar Versão Demo
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrapping Script -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
