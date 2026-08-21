@@ -937,21 +937,112 @@ pre code {
   }
 }
 
+.chart-container {
+  height: 300px;
+  position: relative;
+  width: 100%;
+}
+
 /* Responsive fixes */
+@media (max-width: 900px) {
+  .summary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   .nav-container {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
   }
   main {
     padding: 1rem;
     gap: 1.25rem;
   }
+  .logo {
+    font-size: 1.15rem;
+  }
   .logo span {
+    display: inline;
+  }
+  
+  /* Redimensionamento de títulos */
+  h1 {
+    font-size: 1.4rem !important;
+    text-align: left;
+    width: 100%;
+  }
+  .section-title {
+    font-size: 1.1rem;
+  }
+  
+  /* Botões em formato de ícone no celular (limpa espaço) */
+  .btn.admin-only span,
+  .btn-admin-trigger span,
+  #btn-reset-config span {
     display: none;
   }
-  .form-row {
-    grid-template-columns: 1fr;
+  
+  .btn.admin-only,
+  .btn-admin-trigger,
+  #btn-reset-config {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
+  
+  .btn.admin-only i,
+  .btn-admin-trigger i,
+  #btn-reset-config i {
+    margin: 0 !important;
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Form row side-by-side no celular com espaçamento menor */
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  
+  /* Pódios e Sumário ocupando 100% de largura */
+  .leaders-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Card de pódio menor no celular */
+  .leader-podium-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .leader-podium-name {
+    font-size: 1.15rem;
+  }
+  
+  /* Histórico gráfico menor */
+  .chart-container {
+    height: 220px !important;
+  }
+  
+  /* Modais com espaçamento menor */
+  .modal-content {
+    padding: 1.25rem;
+    max-width: 95%;
+  }
+  
+  /* Evitar estouro de texto nos feeds de atividades */
+  .activity-sub-info {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+  }
+  
   .toast-container {
     left: 1rem;
     right: 1rem;
@@ -959,6 +1050,13 @@ pre code {
   }
   .toast {
     min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Em telas muito estreitas, oculta texto do logo para caber o botão do admin na mesma linha */
+  .logo span {
+    display: none;
   }
 }
 

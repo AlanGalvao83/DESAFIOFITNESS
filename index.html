@@ -53,7 +53,7 @@
           </div>
           
           <button class="btn btn-sm" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color);" aria-label="Desconectar banco de dados">
-            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Desconectar Banco
+            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span>Desconectar Banco</span>
           </button>
         </div>
       </div>
@@ -152,13 +152,13 @@
               <!-- Admin Only Actions in Rankings Header -->
               <div style="display: flex; gap: 0.5rem;">
                 <button class="btn btn-primary admin-only" id="btn-open-log" style="display: none;" aria-label="Lançar nova atividade">
-                  <i data-lucide="plus"></i> Lançar Atividade
+                  <i data-lucide="plus"></i> <span>Lançar Atividade</span>
                 </button>
                 <button class="btn admin-only" id="btn-open-participant" style="display: none;" aria-label="Cadastrar novo participante">
-                  <i data-lucide="user-plus"></i> Novo Participante
+                  <i data-lucide="user-plus"></i> <span>Novo Participante</span>
                 </button>
                 <button class="btn admin-only" id="btn-open-challenge" style="display: none;" aria-label="Gerenciar desafios">
-                  <i data-lucide="settings"></i> Desafios
+                  <i data-lucide="settings"></i> <span>Desafios</span>
                 </button>
               </div>
             </div>
@@ -182,7 +182,7 @@
           <!-- History Chart -->
           <section class="card" aria-labelledby="history-chart-title">
             <h2 id="history-chart-title" class="section-title"><i data-lucide="trending-up"></i> Histórico do Desafio</h2>
-            <div style="height: 300px; position: relative;">
+            <div class="chart-container">
               <canvas id="history-chart"></canvas>
             </div>
           </section>
@@ -437,6 +437,12 @@ CREATE TABLE public.settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- Desativar RLS para permitir acesso público via API cliente
+ALTER TABLE public.challenges DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.participants DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activities DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings DISABLE ROW LEVEL SECURITY;
 
 -- Ativar tabelas em tempo real
 ALTER PUBLICATION supabase_realtime ADD TABLE public.challenges;

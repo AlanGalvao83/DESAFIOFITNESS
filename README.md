@@ -62,6 +62,12 @@ CREATE TABLE public.settings (
     value TEXT NOT NULL
 );
 
+-- Desativar RLS para permitir acesso público via API cliente
+ALTER TABLE public.challenges DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.participants DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activities DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings DISABLE ROW LEVEL SECURITY;
+
 -- Habilitar atualizações em tempo real para as tabelas
 ALTER PUBLICATION supabase_realtime ADD TABLE public.challenges;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.participants;
