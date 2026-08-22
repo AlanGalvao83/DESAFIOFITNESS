@@ -1,6 +1,8 @@
 // Supabase database configuration and operations module
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+let supabase = null;
+
 // Default Supabase credentials for the project (fallback)
 const DEFAULT_URL = 'https://vrkvqxlzuaxupfxwajzr.supabase.co';
 const DEFAULT_KEY = 'sb_publishable_8vkn-jVX6VlurrUAAIXYhA_Bul-IYCM';
