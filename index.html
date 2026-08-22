@@ -41,7 +41,12 @@
       
       <!-- Top Title and Challenge Selector -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
-        <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800;">Painel de Performance</h1>
+        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+          <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800; margin: 0;">Painel de Performance</h1>
+          <div id="challenge-dates-countdown" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <!-- Dynamically populated in app.js -->
+          </div>
+        </div>
         
         <div style="display: flex; align-items: center; gap: 1rem;">
           <!-- Challenge Selector Dropdown -->
@@ -52,7 +57,7 @@
             </select>
           </div>
           
-          <button class="btn btn-sm" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color);" aria-label="Desconectar banco de dados">
+          <button class="btn btn-sm admin-only" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color); display: none;" aria-label="Desconectar banco de dados">
             <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span>Desconectar Banco</span>
           </button>
         </div>
@@ -195,6 +200,14 @@
             <h2 id="feed-title" class="section-title"><i data-lucide="activity"></i> Atividades Recentes</h2>
             <div class="feed-list" id="recent-activities-list">
               <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- Strava Club Widget -->
+          <section class="card" aria-labelledby="strava-title">
+            <h2 id="strava-title" class="section-title"><i data-lucide="footprints" style="color: #fc4c02;"></i> Clube no Strava</h2>
+            <div style="display: flex; justify-content: center; width: 100%;">
+              <iframe allowtransparency='true' frameborder='0' height='454' scrolling='no' src='https://www.strava.com/clubs/2309004/latest-rides/a14423f85f9ea15b0ca0e929b4a5e067b73fd83b?show_rides=true' width='100%' style='border: none; max-width: 300px; border-radius: var(--radius-sm);'></iframe>
             </div>
           </section>
         </div>

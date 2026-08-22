@@ -277,6 +277,9 @@ async function refreshData(forceReloadChallenges = false) {
     // 6. Calculate & Render Leaders (Prizes Highlight)
     renderLeadersPodium();
     
+    // Update dates and countdown
+    updateChallengeDatesCountdown(currentChallenge);
+    
     // 7. Render dynamic lists & charts
     renderLeaderboard();
     renderRecentActivities();
@@ -342,6 +345,48 @@ function renderLeadersPodium() {
     el.runningLeaderName().textContent = 'Ninguém ainda';
     el.runningLeaderValue().innerHTML = `Total: <strong>0</strong> km`;
   }
+}
+
+// Calculate challenge start/end dates and remaining days countdown
+function updateChallengeDatesCountdown(challenge) {
+  const container = document.getElementById('challenge-dates-countdown');
+  if (!container) return;
+  
+  if (!challenge) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  const start = formatDate(challenge.start_date);
+  const end = formatDate(challenge.end_date);
+  
+  let countdownText = '';
+  if (challenge.status === 'active') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(challenge.end_date + 'T23:59:59');
+    endDate.setHours(0, 0, 0, 0);
+    
+    const timeDiff = endDate.getTime() - today.getTime();
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    if (daysRemaining > 1) {
+      countdownText = ` • <span style="color: var(--accent-cyan); font-weight: 700;">${daysRemaining} dias restantes</span>`;
+    } else if (daysRemaining === 1) {
+      countdownText = ` • <span style="color: var(--accent-amber); font-weight: 700;">Último dia!</span>`;
+    } else if (daysRemaining === 0) {
+      countdownText = ` • <span style="color: var(--accent-rose); font-weight: 700;">Termina hoje!</span>`;
+    } else {
+      countdownText = ` • <span style="color: var(--text-muted);">Encerrado</span>`;
+    }
+  } else {
+    countdownText = ` • <span style="color: var(--text-muted);">Encerrado</span>`;
+  }
+  
+  container.innerHTML = `
+    <i data-lucide="clock" style="width: 14px; height: 14px; color: var(--text-secondary); margin-right: 0.25rem;"></i>
+    <span>Duração: <strong>${start}</strong> até <strong>${end}</strong>${countdownText}</span>
+  `;
 }
 
 // Populate the challenge filter selector dropdown
