@@ -51,6 +51,8 @@ const el = {
   runningLeaderValue: () => document.getElementById('running-leader-value'),
   cyclingLeaderName: () => document.getElementById('cycling-leader-name'),
   cyclingLeaderValue: () => document.getElementById('cycling-leader-value'),
+  topDayLeaderName: () => document.getElementById('top-day-leader-name'),
+  topDayLeaderValue: () => document.getElementById('top-day-leader-value'),
   
   tabPushups: () => document.getElementById('tab-pushups'),
   tabRunning: () => document.getElementById('tab-running'),
@@ -311,7 +313,7 @@ function renderLeadersPodium() {
   const runningRanking = state.rankings.runningRanking;
   const cyclingRanking = state.rankings.cyclingRanking || [];
   
-  // Find pushups leader(s)
+  // 1. Find pushups leader(s)
   let maxPushups = 0;
   let pushupLeaders = [];
   
@@ -334,7 +336,7 @@ function renderLeadersPodium() {
     el.pushupLeaderValue().innerHTML = `Total: <strong>0</strong> reps`;
   }
   
-  // Find running leader(s)
+  // 2. Find running leader(s)
   let maxDistance = 0;
   let runningLeaders = [];
   
@@ -357,7 +359,7 @@ function renderLeadersPodium() {
     el.runningLeaderValue().innerHTML = `Total: <strong>0</strong> km`;
   }
 
-  // Find cycling leader(s)
+  // 3. Find cycling leader(s)
   let maxCyclingDistance = 0;
   let cyclingLeaders = [];
   
@@ -378,6 +380,56 @@ function renderLeadersPodium() {
   } else {
     el.cyclingLeaderName().textContent = 'Ninguém ainda';
     el.cyclingLeaderValue().innerHTML = `Total: <strong>0</strong> km`;
+  }
+
+  // 4. Calculate TOP OF THE DAY (Relative Effort points for TODAY)
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const dailyPointsMap = {};
+  
+  state.participants.forEach(p => {
+    dailyPointsMap[p.id] = {
+      name: p.name,
+      points: 0
+    };
+  });
+  
+  state.recentActivities.forEach(act => {
+    if (act.date === todayStr) {
+      const userEffort = dailyPointsMap[act.participant_id];
+      if (!userEffort) return;
+      
+      let points = 0;
+      if (act.type === 'pushup') {
+        points = act.amount;
+      } else if (act.type === 'running') {
+        points = act.amount * 100;
+      } else if (act.type === 'cycling') {
+        points = act.amount * 25;
+      }
+      userEffort.points += points;
+    }
+  });
+  
+  let maxPoints = 0;
+  let topDayLeaders = [];
+  
+  Object.values(dailyPointsMap).forEach(user => {
+    if (user.points > 0) {
+      if (user.points > maxPoints) {
+        maxPoints = user.points;
+        topDayLeaders = [user.name];
+      } else if (user.points === maxPoints) {
+        topDayLeaders.push(user.name);
+      }
+    }
+  });
+  
+  if (topDayLeaders.length > 0) {
+    el.topDayLeaderName().textContent = topDayLeaders.join(', ');
+    el.topDayLeaderValue().innerHTML = `Total: <strong>${maxPoints.toLocaleString('pt-BR')}</strong> pts`;
+  } else {
+    el.topDayLeaderName().textContent = 'Ninguém ainda';
+    el.topDayLeaderValue().innerHTML = `Total: <strong>0</strong> pts`;
   }
 }
 
