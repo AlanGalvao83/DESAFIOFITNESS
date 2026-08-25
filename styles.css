@@ -283,6 +283,17 @@ main {
   box-shadow: 0 0 15px var(--accent-emerald-glow);
 }
 
+.stat-card.amber .stat-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--accent-amber);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.stat-card.amber:hover .stat-icon {
+  background: var(--accent-amber);
+  color: white;
+  box-shadow: 0 0 15px var(--accent-amber-glow);
+}
+
 /* Dashboard Columns */
 .dashboard-layout {
   display: grid;
@@ -348,6 +359,9 @@ main {
 }
 .tab-btn.active-cyan {
   border-bottom: 2px solid var(--accent-cyan);
+}
+.tab-btn.active-amber {
+  border-bottom: 2px solid var(--accent-amber);
 }
 
 .leaderboard-list {
@@ -1263,6 +1277,16 @@ body.admin-active .admin-banner {
   box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.1);
 }
 
+.leader-podium-card.cycling-leader {
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.leader-podium-card.cycling-leader:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(135deg, rgba(22, 29, 47, 0.5) 0%, rgba(245, 158, 11, 0.08) 100%);
+  box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.1);
+}
+
 .leader-trophy {
   width: 52px;
   height: 52px;
@@ -1287,6 +1311,13 @@ body.admin-active .admin-banner {
   border: 1px solid rgba(6, 182, 212, 0.2);
   color: var(--accent-cyan);
   box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+}
+
+.cycling-leader .leader-trophy {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: var(--accent-amber);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
 }
 
 .leader-podium-info {

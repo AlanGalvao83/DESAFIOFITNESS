@@ -46,10 +46,10 @@ CREATE TABLE public.activities (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
     participant_id UUID NOT NULL REFERENCES public.participants(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('pushup', 'running')),
+    type TEXT NOT NULL CHECK (type IN ('pushup', 'running', 'cycling')),
     amount NUMERIC NOT NULL,
     duration INTEGER, -- Em segundos
-    pace NUMERIC,     -- Minutos por km
+    pace NUMERIC,     -- Minutos por km ou km/h para bike
     validator_id UUID REFERENCES public.participants(id) ON DELETE SET NULL,
     status TEXT DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
     date DATE NOT NULL,

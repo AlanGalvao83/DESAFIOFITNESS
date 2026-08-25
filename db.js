@@ -150,6 +150,32 @@ const DEFAULT_MOCK_ACTIVITIES = [
     status: 'approved',
     date: new Date().toISOString().split('T')[0],
     created_at: new Date().toISOString()
+  },
+  {
+    id: 'a6',
+    challenge_id: 'c1',
+    participant_id: 'p3',
+    type: 'cycling',
+    amount: 32.5,
+    duration: 4800,
+    pace: 24.4,
+    validator_id: null,
+    status: 'approved',
+    date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString().split('T')[0],
+    created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString()
+  },
+  {
+    id: 'a7',
+    challenge_id: 'c1',
+    participant_id: 'p1',
+    type: 'cycling',
+    amount: 45.0,
+    duration: 6300,
+    pace: 25.7,
+    validator_id: null,
+    status: 'approved',
+    date: new Date().toISOString().split('T')[0],
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -403,6 +429,8 @@ export async function logActivity({ challengeId, participantId, type, amount, du
     let pace = null;
     if (type === 'running' && duration > 0) {
       pace = parseFloat(((duration / 60) / amount).toFixed(2));
+    } else if (type === 'cycling' && duration > 0) {
+      pace = parseFloat((amount / (duration / 3600)).toFixed(1));
     }
     
     const newA = {
@@ -411,7 +439,7 @@ export async function logActivity({ challengeId, participantId, type, amount, du
       participant_id: participantId,
       type,
       amount: parseFloat(amount),
-      duration: type === 'running' ? parseInt(duration) : null,
+      duration: (type === 'running' || type === 'cycling') ? parseInt(duration) : null,
       pace,
       validator_id: type === 'pushup' ? validatorId : null,
       status: 'approved',
@@ -429,6 +457,8 @@ export async function logActivity({ challengeId, participantId, type, amount, du
   let pace = null;
   if (type === 'running' && duration > 0) {
     pace = parseFloat(((duration / 60) / amount).toFixed(2));
+  } else if (type === 'cycling' && duration > 0) {
+    pace = parseFloat((amount / (duration / 3600)).toFixed(1));
   }
   
   const payload = {
@@ -436,7 +466,7 @@ export async function logActivity({ challengeId, participantId, type, amount, du
     participant_id: participantId,
     type,
     amount: parseFloat(amount),
-    duration: type === 'running' ? parseInt(duration) : null,
+    duration: (type === 'running' || type === 'cycling') ? parseInt(duration) : null,
     pace,
     validator_id: type === 'pushup' ? validatorId : null,
     status: 'approved',
@@ -507,7 +537,8 @@ export async function getRankings(challengeId) {
       return {
         pushupsRanking: [],
         runningRanking: [],
-        stats: { totalPushups: 0, totalDistance: 0, participantsCount: 0 }
+        cyclingRanking: [],
+        stats: { totalPushups: 0, totalDistance: 0, totalCycling: 0, participantsCount: 0 }
       };
     }
     
@@ -524,7 +555,11 @@ export async function getRankings(challengeId) {
         runningDistance: 0,
         runningDuration: 0,
         runCount: 0,
-        bestPace: null
+        bestPace: null,
+        cyclingDistance: 0,
+        cyclingDuration: 0,
+        cyclingCount: 0,
+        bestSpeed: 0
       };
     });
     
@@ -544,11 +579,22 @@ export async function getRankings(challengeId) {
             userStats.bestPace = act.pace;
           }
         }
+      } else if (act.type === 'cycling') {
+        userStats.cyclingDistance += act.amount;
+        userStats.cyclingDuration += act.duration || 0;
+        userStats.cyclingCount += 1;
+        
+        if (act.pace) {
+          if (act.pace > userStats.bestSpeed) {
+            userStats.bestSpeed = act.pace;
+          }
+        }
       }
     });
     
     const pushupsRanking = Object.values(rankingMap).sort((a, b) => b.pushups - a.pushups);
     const runningRanking = Object.values(rankingMap).sort((a, b) => b.runningDistance - a.runningDistance);
+    const cyclingRanking = Object.values(rankingMap).sort((a, b) => b.cyclingDistance - a.cyclingDistance);
     
     const totalPushups = activities
       .filter(a => a.type === 'pushup')
@@ -558,12 +604,18 @@ export async function getRankings(challengeId) {
       .filter(a => a.type === 'running')
       .reduce((sum, a) => sum + a.amount, 0);
       
+    const totalCycling = activities
+      .filter(a => a.type === 'cycling')
+      .reduce((sum, a) => sum + a.amount, 0);
+      
     return {
       pushupsRanking,
       runningRanking,
+      cyclingRanking,
       stats: {
         totalPushups,
         totalDistance: parseFloat(totalDistance.toFixed(2)),
+        totalCycling: parseFloat(totalCycling.toFixed(2)),
         participantsCount: participants.length
       }
     };
@@ -574,7 +626,8 @@ export async function getRankings(challengeId) {
     return {
       pushupsRanking: [],
       runningRanking: [],
-      stats: { totalPushups: 0, totalDistance: 0, participantsCount: 0 }
+      cyclingRanking: [],
+      stats: { totalPushups: 0, totalDistance: 0, totalCycling: 0, participantsCount: 0 }
     };
   }
   
@@ -600,7 +653,11 @@ export async function getRankings(challengeId) {
       runningDistance: 0,
       runningDuration: 0,
       runCount: 0,
-      bestPace: null
+      bestPace: null,
+      cyclingDistance: 0,
+      cyclingDuration: 0,
+      cyclingCount: 0,
+      bestSpeed: 0
     };
   });
   
@@ -621,6 +678,16 @@ export async function getRankings(challengeId) {
           userStats.bestPace = act.pace;
         }
       }
+    } else if (act.type === 'cycling') {
+      userStats.cyclingDistance += act.amount;
+      userStats.cyclingDuration += act.duration || 0;
+      userStats.cyclingCount += 1;
+      
+      if (act.pace) {
+        if (act.pace > userStats.bestSpeed) {
+          userStats.bestSpeed = act.pace;
+        }
+      }
     }
   });
   
@@ -630,6 +697,9 @@ export async function getRankings(challengeId) {
     
   const runningRanking = Object.values(rankingMap)
     .sort((a, b) => b.runningDistance - a.runningDistance);
+
+  const cyclingRanking = Object.values(rankingMap)
+    .sort((a, b) => b.cyclingDistance - a.cyclingDistance);
     
   // Overall statistics
   const totalPushups = activities
@@ -639,13 +709,19 @@ export async function getRankings(challengeId) {
   const totalDistance = activities
     .filter(a => a.type === 'running')
     .reduce((sum, a) => sum + a.amount, 0);
+
+  const totalCycling = activities
+    .filter(a => a.type === 'cycling')
+    .reduce((sum, a) => sum + a.amount, 0);
     
   return {
     pushupsRanking,
     runningRanking,
+    cyclingRanking,
     stats: {
       totalPushups,
       totalDistance: parseFloat(totalDistance.toFixed(2)),
+      totalCycling: parseFloat(totalCycling.toFixed(2)),
       participantsCount: participants.length
     }
   };

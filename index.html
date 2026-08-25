@@ -93,6 +93,20 @@
               <div class="leader-podium-value" id="running-leader-value">Total: <strong>0</strong> km</div>
             </div>
           </div>
+
+          <!-- Cycling Leader Card -->
+          <div class="leader-podium-card cycling-leader">
+            <div class="leader-trophy">
+              <i data-lucide="bike"></i>
+            </div>
+            <div class="leader-podium-info">
+              <div class="leader-podium-label">
+                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Bike (Brinde 🎁)
+              </div>
+              <div class="leader-podium-name" id="cycling-leader-name">Ninguém ainda</div>
+              <div class="leader-podium-value" id="cycling-leader-value">Total: <strong>0</strong> km</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -129,6 +143,16 @@
           </div>
           <div class="stat-icon">
             <i data-lucide="footprints"></i>
+          </div>
+        </div>
+
+        <div class="card stat-card amber">
+          <div class="stat-info">
+            <h3>Bike (Distância)</h3>
+            <span class="stat-value" id="total-cycling-value">0 km</span>
+          </div>
+          <div class="stat-icon">
+            <i data-lucide="bike"></i>
           </div>
         </div>
 
@@ -175,6 +199,9 @@
               </button>
               <button class="tab-btn" id="tab-running" role="tab" aria-selected="false" aria-controls="leaderboard-list">
                 <i data-lucide="footprints"></i> Corrida
+              </button>
+              <button class="tab-btn" id="tab-cycling" role="tab" aria-selected="false" aria-controls="leaderboard-list">
+                <i data-lucide="bike"></i> Bike
               </button>
             </div>
 
@@ -358,6 +385,7 @@
           <select id="log-type" required>
             <option value="pushup">Flexões de Braço (Push-ups)</option>
             <option value="running">Corrida (Running)</option>
+            <option value="cycling">Ciclismo (Bike)</option>
           </select>
         </div>
 
@@ -436,7 +464,7 @@ CREATE TABLE public.activities (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
     participant_id UUID NOT NULL REFERENCES public.participants(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('pushup', 'running')),
+    type TEXT NOT NULL CHECK (type IN ('pushup', 'running', 'cycling')),
     amount NUMERIC NOT NULL,
     duration INTEGER,
     pace NUMERIC,

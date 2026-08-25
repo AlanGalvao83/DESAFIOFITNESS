@@ -7,9 +7,14 @@ const state = {
   selectedChallengeId: null,
   activeChallenge: null,
   participants: [],
-  rankings: { pushupsRanking: [], runningRanking: [], stats: { totalPushups: 0, totalDistance: 0, participantsCount: 0 } },
+  rankings: { 
+    pushupsRanking: [], 
+    runningRanking: [], 
+    cyclingRanking: [], 
+    stats: { totalPushups: 0, totalDistance: 0, totalCycling: 0, participantsCount: 0 } 
+  },
   recentActivities: [],
-  activeTab: 'pushup', // 'pushup' or 'running'
+  activeTab: 'pushup', // 'pushup', 'running', or 'cycling'
   chartInstance: null,
   hasAdminCredentials: false
 };
@@ -36,6 +41,7 @@ const el = {
   
   totalPushups: () => document.getElementById('total-pushups-value'),
   totalDistance: () => document.getElementById('total-distance-value'),
+  totalCycling: () => document.getElementById('total-cycling-value'),
   activeParticipants: () => document.getElementById('active-participants-value'),
   
   // Leaders / Prize elements
@@ -43,9 +49,12 @@ const el = {
   pushupLeaderValue: () => document.getElementById('pushup-leader-value'),
   runningLeaderName: () => document.getElementById('running-leader-name'),
   runningLeaderValue: () => document.getElementById('running-leader-value'),
+  cyclingLeaderName: () => document.getElementById('cycling-leader-name'),
+  cyclingLeaderValue: () => document.getElementById('cycling-leader-value'),
   
   tabPushups: () => document.getElementById('tab-pushups'),
   tabRunning: () => document.getElementById('tab-running'),
+  tabCycling: () => document.getElementById('tab-cycling'),
   leaderboardList: () => document.getElementById('leaderboard-list'),
   
   recentActivitiesList: () => document.getElementById('recent-activities-list'),
@@ -272,6 +281,7 @@ async function refreshData(forceReloadChallenges = false) {
     const stats = state.rankings.stats;
     el.totalPushups().textContent = stats.totalPushups.toLocaleString('pt-BR');
     el.totalDistance().textContent = `${stats.totalDistance.toLocaleString('pt-BR')} km`;
+    el.totalCycling().textContent = `${stats.totalCycling.toLocaleString('pt-BR')} km`;
     el.activeParticipants().textContent = stats.participantsCount;
     
     // 6. Calculate & Render Leaders (Prizes Highlight)
@@ -295,10 +305,11 @@ async function refreshData(forceReloadChallenges = false) {
   }
 }
 
-// Calculate leaders for pushups and running, and render the podium
+// Calculate leaders for pushups, running, and cycling, and render the podium
 function renderLeadersPodium() {
   const pushupsRanking = state.rankings.pushupsRanking;
   const runningRanking = state.rankings.runningRanking;
+  const cyclingRanking = state.rankings.cyclingRanking || [];
   
   // Find pushups leader(s)
   let maxPushups = 0;
@@ -344,6 +355,29 @@ function renderLeadersPodium() {
   } else {
     el.runningLeaderName().textContent = 'Ninguém ainda';
     el.runningLeaderValue().innerHTML = `Total: <strong>0</strong> km`;
+  }
+
+  // Find cycling leader(s)
+  let maxCyclingDistance = 0;
+  let cyclingLeaders = [];
+  
+  cyclingRanking.forEach(user => {
+    if (user.cyclingDistance > 0) {
+      if (user.cyclingDistance > maxCyclingDistance) {
+        maxCyclingDistance = user.cyclingDistance;
+        cyclingLeaders = [user.name];
+      } else if (user.cyclingDistance === maxCyclingDistance) {
+        cyclingLeaders.push(user.name);
+      }
+    }
+  });
+  
+  if (cyclingLeaders.length > 0) {
+    el.cyclingLeaderName().textContent = cyclingLeaders.join(', ');
+    el.cyclingLeaderValue().innerHTML = `Total: <strong>${maxCyclingDistance.toFixed(1).toLocaleString('pt-BR')}</strong> km`;
+  } else {
+    el.cyclingLeaderName().textContent = 'Ninguém ainda';
+    el.cyclingLeaderValue().innerHTML = `Total: <strong>0</strong> km`;
   }
 }
 
@@ -447,8 +481,14 @@ function renderLeaderboard() {
   const listContainer = el.leaderboardList();
   listContainer.innerHTML = '';
   
-  const isPushupTab = state.activeTab === 'pushup';
-  const list = isPushupTab ? state.rankings.pushupsRanking : state.rankings.runningRanking;
+  let list = [];
+  if (state.activeTab === 'pushup') {
+    list = state.rankings.pushupsRanking;
+  } else if (state.activeTab === 'running') {
+    list = state.rankings.runningRanking;
+  } else if (state.activeTab === 'cycling') {
+    list = state.rankings.cyclingRanking || [];
+  }
   
   if (list.length === 0) {
     listContainer.innerHTML = `
@@ -461,21 +501,35 @@ function renderLeaderboard() {
   }
   
   list.forEach((item, index) => {
-    const value = isPushupTab ? item.pushups : item.runningDistance;
-    
-    // Subtext details
+    let value = 0;
     let subtext = '';
-    if (!isPushupTab && item.runningDistance > 0) {
-      subtext = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-        Melhor Pace: ${formatPace(item.bestPace)} • ${item.runCount} corrida${item.runCount > 1 ? 's' : ''}
-      </div>`;
-    } else if (isPushupTab && item.pushups > 0) {
-      subtext = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-        Treino de força
-      </div>`;
-    }
+    let unit = '';
     
-    const unit = isPushupTab ? 'flexões' : 'km';
+    if (state.activeTab === 'pushup') {
+      value = item.pushups;
+      unit = 'flexões';
+      if (item.pushups > 0) {
+        subtext = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+          Treino de força
+        </div>`;
+      }
+    } else if (state.activeTab === 'running') {
+      value = item.runningDistance;
+      unit = 'km';
+      if (item.runningDistance > 0) {
+        subtext = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+          Melhor Pace: ${formatPace(item.bestPace)} • ${item.runCount} corrida${item.runCount > 1 ? 's' : ''}
+        </div>`;
+      }
+    } else if (state.activeTab === 'cycling') {
+      value = item.cyclingDistance;
+      unit = 'km';
+      if (item.cyclingDistance > 0) {
+        subtext = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+          Melhor Vel.: ${item.bestSpeed.toFixed(1)} km/h • ${item.cyclingCount} pedalada${item.cyclingCount > 1 ? 's' : ''}
+        </div>`;
+      }
+    }
     
     const rankEl = document.createElement('div');
     rankEl.className = 'leaderboard-item';
@@ -486,7 +540,7 @@ function renderLeaderboard() {
         ${subtext}
       </div>
       <div class="rank-score">
-        ${isPushupTab ? value.toLocaleString('pt-BR') : value.toFixed(1).toLocaleString('pt-BR')}
+        ${state.activeTab === 'pushup' ? value.toLocaleString('pt-BR') : value.toFixed(1).toLocaleString('pt-BR')}
         <span class="rank-unit">${unit}</span>
       </div>
     `;
@@ -512,28 +566,36 @@ function renderRecentActivities() {
   }
   
   list.forEach(act => {
-    const isPushup = act.type === 'pushup';
     const itemEl = document.createElement('div');
     itemEl.className = `activity-item ${act.type}`;
     
     let detailsText = '';
     let subInfoHTML = '';
+    let icon = 'activity';
     
-    if (isPushup) {
+    if (act.type === 'pushup') {
+      icon = 'dumbbell';
       const witnessText = act.validator ? ` • Testemunha: ${act.validator.name}` : '';
       detailsText = `fez <strong>${act.amount} flexões</strong> de braço.`;
       subInfoHTML = `
         <span><i data-lucide="calendar"></i> ${formatDate(act.date)} ${witnessText}</span>
       `;
-    } else {
+    } else if (act.type === 'running') {
+      icon = 'footprints';
       detailsText = `correu <strong>${act.amount} km</strong> em <strong>${formatDuration(act.duration)}</strong>.`;
       subInfoHTML = `
         <span><i data-lucide="calendar"></i> ${formatDate(act.date)}</span>
         <span><i data-lucide="trending-up"></i> Pace: ${formatPace(act.pace)}</span>
       `;
+    } else if (act.type === 'cycling') {
+      icon = 'bike';
+      detailsText = `pedalou <strong>${act.amount} km</strong> em <strong>${formatDuration(act.duration)}</strong>.`;
+      subInfoHTML = `
+        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}</span>
+        <span><i data-lucide="zap"></i> Vel. Média: ${act.pace.toFixed(1)} km/h</span>
+      `;
     }
     
-    const icon = isPushup ? 'dumbbell' : 'footprints';
     const userName = act.participant ? act.participant.name : 'Deletado';
     
     itemEl.innerHTML = `
@@ -573,7 +635,7 @@ function renderCharts(challenge) {
     const d = new Date(endLimitDate);
     d.setDate(d.getDate() - i);
     const dayStr = d.toISOString().split('T')[0];
-    days[dayStr] = { running: 0, pushups: 0 };
+    days[dayStr] = { running: 0, pushups: 0, cycling: 0 };
   }
   
   state.recentActivities.forEach(act => {
@@ -582,6 +644,8 @@ function renderCharts(challenge) {
         days[act.date].running += act.amount;
       } else if (act.type === 'pushup') {
         days[act.date].pushups += act.amount;
+      } else if (act.type === 'cycling') {
+        days[act.date].cycling += act.amount;
       }
     }
   });
@@ -589,6 +653,7 @@ function renderCharts(challenge) {
   const labels = Object.keys(days).map(formatDate);
   const runningData = Object.values(days).map(d => d.running);
   const pushupsData = Object.values(days).map(d => d.pushups);
+  const cyclingData = Object.values(days).map(d => d.cycling);
   
   state.chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -600,6 +665,15 @@ function renderCharts(challenge) {
           data: runningData,
           backgroundColor: 'rgba(6, 182, 212, 0.4)',
           borderColor: '#06b6d4',
+          borderWidth: 2,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Bike (km)',
+          data: cyclingData,
+          backgroundColor: 'rgba(245, 158, 11, 0.4)',
+          borderColor: '#f59e0b',
           borderWidth: 2,
           borderRadius: 4,
           yAxisID: 'y'
@@ -638,7 +712,7 @@ function renderCharts(challenge) {
           position: 'left',
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
           ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
-          title: { display: true, text: 'Corridas (km)', color: '#06b6d4' }
+          title: { display: true, text: 'Distância (km)', color: '#06b6d4' }
         },
         y1: {
           type: 'linear',
@@ -928,7 +1002,7 @@ function initEvents() {
       duration = (mins * 60) + secs;
       
       if (amount <= 0 || duration <= 0) {
-        showToast('Preencha a distância e tempo da corrida.', 'error');
+        showToast('Preencha a distância e o tempo da atividade.', 'error');
         return;
       }
     }
@@ -963,6 +1037,7 @@ function initEvents() {
   el.tabPushups().addEventListener('click', () => {
     el.tabPushups().classList.add('active', 'active-purple');
     el.tabRunning().classList.remove('active', 'active-cyan');
+    el.tabCycling().classList.remove('active', 'active-amber');
     state.activeTab = 'pushup';
     renderLeaderboard();
   });
@@ -970,7 +1045,16 @@ function initEvents() {
   el.tabRunning().addEventListener('click', () => {
     el.tabRunning().classList.add('active', 'active-cyan');
     el.tabPushups().classList.remove('active', 'active-purple');
+    el.tabCycling().classList.remove('active', 'active-amber');
     state.activeTab = 'running';
+    renderLeaderboard();
+  });
+
+  el.tabCycling().addEventListener('click', () => {
+    el.tabCycling().classList.add('active', 'active-amber');
+    el.tabPushups().classList.remove('active', 'active-purple');
+    el.tabRunning().classList.remove('active', 'active-cyan');
+    state.activeTab = 'cycling';
     renderLeaderboard();
   });
 }
