@@ -388,8 +388,29 @@
           <button class="btn-edit-participant-name admin-only" id="btn-edit-participant-name-trigger" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; display: none;" type="button" aria-label="Editar nome">
             <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
           </button>
-        </div>
         <button class="close-btn" id="btn-close-participant-details" aria-label="Fechar Modal" style="margin-left: 1rem; flex-shrink: 0;">&times;</button>
+      </div>
+      
+      <!-- Participant Stats Summary -->
+      <div id="participant-stats-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+        <div style="text-align: center; border-right: 1px solid var(--border-color);">
+          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="activity" style="width: 12px; height: 12px; color: var(--accent-purple);"></i> Treinos
+          </div>
+          <div id="participant-total-activities" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
+        </div>
+        <div style="text-align: center; border-right: 1px solid var(--border-color);">
+          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="footprints" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i> Corrida
+          </div>
+          <div id="participant-total-running" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="bike" style="width: 12px; height: 12px; color: var(--accent-amber);"></i> Bike
+          </div>
+          <div id="participant-total-cycling" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
+        </div>
       </div>
       
       <!-- History Section -->

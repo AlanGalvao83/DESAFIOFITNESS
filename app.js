@@ -108,7 +108,10 @@ const el = {
   btnSaveParticipantName: () => document.getElementById('btn-save-participant-name'),
   btnCancelParticipantName: () => document.getElementById('btn-cancel-participant-name'),
   participantActivitiesList: () => document.getElementById('participant-activities-list'),
-  btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity')
+  btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity'),
+  participantTotalActivities: () => document.getElementById('participant-total-activities'),
+  participantTotalRunning: () => document.getElementById('participant-total-running'),
+  participantTotalCycling: () => document.getElementById('participant-total-cycling')
 };
 
 // ----------------------------------------------------
@@ -668,6 +671,24 @@ function renderParticipantActivities() {
   container.innerHTML = '';
   
   const list = state.selectedParticipantActivities;
+  
+  // Calculate participant statistics
+  const totalActivities = list.length;
+  let totalRunning = 0;
+  let totalCycling = 0;
+  
+  list.forEach(act => {
+    if (act.type === 'running') {
+      totalRunning += act.amount;
+    } else if (act.type === 'cycling') {
+      totalCycling += act.amount;
+    }
+  });
+  
+  // Render stats summary in modal
+  el.participantTotalActivities().textContent = totalActivities;
+  el.participantTotalRunning().innerHTML = `${totalRunning.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
+  el.participantTotalCycling().innerHTML = `${totalCycling.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
   
   if (list.length === 0) {
     container.innerHTML = `
