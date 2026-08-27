@@ -378,6 +378,7 @@ main {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   transition: var(--transition-fast);
+  cursor: pointer;
 }
 
 .leaderboard-item:hover {
@@ -1381,5 +1382,63 @@ body.admin-active .admin-banner {
   50% {
     transform: translateY(-4px);
   }
+}
+
+/* ==================================================== */
+/* Participant Details Modal Custom Styles              */
+/* ==================================================== */
+
+.participant-activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.participant-activity-item:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-delete-activity {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-delete-activity:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--accent-rose);
+}
+
+.btn-edit-participant-name {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-edit-participant-name:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }
 

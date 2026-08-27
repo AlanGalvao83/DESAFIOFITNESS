@@ -370,6 +370,47 @@
     </div>
   </div>
 
+  <!-- MODAL: Participant Details & History -->
+  <div class="modal-overlay" id="modal-participant-details" role="dialog" aria-modal="true" aria-labelledby="modal-participant-details-title">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header" style="justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;">
+          <div id="participant-name-edit-container" style="display: none; align-items: center; gap: 0.5rem; width: 100%;">
+            <input type="text" id="edit-participant-name-input" style="font-size: 1.25rem; font-weight: 800; padding: 0.25rem 0.5rem; flex: 1; min-width: 0;" maxlength="20">
+            <button class="btn btn-sm btn-approve" id="btn-save-participant-name" style="padding: 0.4rem; flex-shrink: 0;" type="button">
+              <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button class="btn btn-sm btn-reject" id="btn-cancel-participant-name" style="padding: 0.4rem; flex-shrink: 0;" type="button">
+              <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+          <span id="participant-details-name-text" style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-title); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Participante</span>
+          <button class="btn-edit-participant-name admin-only" id="btn-edit-participant-name-trigger" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; display: none;" type="button" aria-label="Editar nome">
+            <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+        <button class="close-btn" id="btn-close-participant-details" aria-label="Fechar Modal" style="margin-left: 1rem; flex-shrink: 0;">&times;</button>
+      </div>
+      
+      <!-- History Section -->
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-family: var(--font-title); font-size: 1rem; margin-bottom: 0.75rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.35rem;">
+          <i data-lucide="history" style="width: 16px; height: 16px;"></i> Histórico de Atividades
+        </h4>
+        <div id="participant-activities-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
+          <!-- Loaded dynamically -->
+        </div>
+      </div>
+      
+      <!-- Admin Action Section -->
+      <div class="admin-only" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: none;">
+        <button class="btn btn-primary btn-block" id="btn-details-add-activity" type="button">
+          <i data-lucide="plus-circle"></i> Lançar Atividade
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Log Activity (Admin Area) -->
   <div class="modal-overlay" id="modal-log-activity" role="dialog" aria-modal="true" aria-labelledby="modal-log-title">
     <div class="modal-content">

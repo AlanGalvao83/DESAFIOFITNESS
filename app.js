@@ -16,7 +16,9 @@ const state = {
   recentActivities: [],
   activeTab: 'pushup', // 'pushup', 'running', or 'cycling'
   chartInstance: null,
-  hasAdminCredentials: false
+  hasAdminCredentials: false,
+  selectedParticipantId: null,
+  selectedParticipantActivities: []
 };
 
 // ----------------------------------------------------
@@ -94,7 +96,19 @@ const el = {
   logRunningFields: () => document.getElementById('log-running-fields'),
   logValidatorSelect: () => document.getElementById('log-validator'),
   
-  toastContainer: () => document.getElementById('toast-container')
+  toastContainer: () => document.getElementById('toast-container'),
+
+  // Participant Details Modal elements
+  modalParticipantDetails: () => document.getElementById('modal-participant-details'),
+  btnCloseParticipantDetails: () => document.getElementById('btn-close-participant-details'),
+  participantDetailsNameText: () => document.getElementById('participant-details-name-text'),
+  btnEditParticipantNameTrigger: () => document.getElementById('btn-edit-participant-name-trigger'),
+  participantNameEditContainer: () => document.getElementById('participant-name-edit-container'),
+  editParticipantNameInput: () => document.getElementById('edit-participant-name-input'),
+  btnSaveParticipantName: () => document.getElementById('btn-save-participant-name'),
+  btnCancelParticipantName: () => document.getElementById('btn-cancel-participant-name'),
+  participantActivitiesList: () => document.getElementById('participant-activities-list'),
+  btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity')
 };
 
 // ----------------------------------------------------
@@ -596,8 +610,206 @@ function renderLeaderboard() {
         <span class="rank-unit">${unit}</span>
       </div>
     `;
+    
+    rankEl.addEventListener('click', () => {
+      openParticipantDetails(item.id);
+    });
+    
     listContainer.appendChild(rankEl);
   });
+}
+
+// ----------------------------------------------------
+// Participant Details & History Modal
+// ----------------------------------------------------
+async function openParticipantDetails(participantId) {
+  state.selectedParticipantId = participantId;
+  const participant = state.participants.find(p => p.id === participantId);
+  if (!participant) return;
+  
+  // Set participant name text and initialize input
+  el.participantDetailsNameText().textContent = participant.name;
+  el.editParticipantNameInput().value = participant.name;
+  
+  // Hide edit container and show text container
+  el.participantNameEditContainer().style.display = 'none';
+  el.participantDetailsNameText().style.display = 'block';
+  
+  // Show/Hide admin triggers based on state.isAdmin
+  if (state.isAdmin) {
+    el.btnEditParticipantNameTrigger().style.display = 'inline-flex';
+    el.btnDetailsAddActivity().parentElement.style.display = 'block';
+  } else {
+    el.btnEditParticipantNameTrigger().style.display = 'none';
+    el.btnDetailsAddActivity().parentElement.style.display = 'none';
+  }
+  
+  // Load activities
+  el.participantActivitiesList().innerHTML = `
+    <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+      <div style="font-size: 0.9rem;">Carregando histórico...</div>
+    </div>
+  `;
+  
+  toggleModal(el.modalParticipantDetails(), true);
+  
+  try {
+    const activities = await db.getParticipantActivities(participantId, state.selectedChallengeId);
+    state.selectedParticipantActivities = activities;
+    renderParticipantActivities();
+  } catch (err) {
+    console.error(err);
+    showToast('Erro ao carregar histórico de treinos.', 'error');
+  }
+}
+
+function renderParticipantActivities() {
+  const container = el.participantActivitiesList();
+  container.innerHTML = '';
+  
+  const list = state.selectedParticipantActivities;
+  
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+        <i data-lucide="calendar-x" style="width: 24px; height: 24px; color: var(--text-muted);"></i>
+        <p>Nenhuma atividade registrada neste desafio.</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+  
+  list.forEach(act => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'participant-activity-item';
+    
+    let icon = 'activity';
+    let typeText = '';
+    let details = '';
+    
+    if (act.type === 'pushup') {
+      icon = 'dumbbell';
+      typeText = 'Flexões';
+      const witnessText = act.validator ? ` • Testemunha: ${act.validator.name}` : '';
+      details = `<strong>${act.amount}</strong> reps${witnessText}`;
+    } else if (act.type === 'running') {
+      icon = 'footprints';
+      typeText = 'Corrida';
+      details = `<strong>${act.amount} km</strong> em ${formatDuration(act.duration)} (Pace: ${formatPace(act.pace)})`;
+    } else if (act.type === 'cycling') {
+      icon = 'bike';
+      typeText = 'Bike';
+      details = `<strong>${act.amount} km</strong> em ${formatDuration(act.duration)} (Vel.: ${act.pace.toFixed(1)} km/h)`;
+    }
+    
+    const deleteBtnHTML = state.isAdmin 
+      ? `<button class="btn-delete-activity" data-id="${act.id}" title="Excluir Atividade">
+           <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+         </button>` 
+      : '';
+      
+    itemEl.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); flex-shrink: 0;">
+          <i data-lucide="${icon}" style="width: 14px; height: 14px;"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); display: flex; justify-content: space-between; align-items: baseline;">
+            <span>${typeText}</span>
+            <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-muted);">${formatDate(act.date)}</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; margin-top: 0.1rem;">
+            ${details}
+          </div>
+        </div>
+      </div>
+      ${deleteBtnHTML}
+    `;
+    
+    container.appendChild(itemEl);
+  });
+  
+  lucide.createIcons();
+  
+  // Add click listener to delete buttons if admin
+  if (state.isAdmin) {
+    container.querySelectorAll('.btn-delete-activity').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const activityId = btn.getAttribute('data-id');
+        await handleDeleteActivity(activityId);
+      });
+    });
+  }
+}
+
+async function handleDeleteActivity(activityId) {
+  if (!state.isAdmin) return;
+  
+  if (confirm('Tem certeza de que deseja excluir esta atividade permanentemente?')) {
+    try {
+      await db.deleteActivity(activityId);
+      showToast('Atividade excluída com sucesso!');
+      
+      // Update local list and re-render
+      state.selectedParticipantActivities = state.selectedParticipantActivities.filter(a => a.id !== activityId);
+      renderParticipantActivities();
+      
+      // Refresh background data to update stats and charts
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao excluir atividade.', 'error');
+    }
+  }
+}
+
+async function saveParticipantName() {
+  if (!state.isAdmin || !state.selectedParticipantId) return;
+  
+  const newName = el.editParticipantNameInput().value.trim();
+  if (!newName) {
+    showToast('O nome não pode estar em branco.', 'error');
+    return;
+  }
+  
+  const participant = state.participants.find(p => p.id === state.selectedParticipantId);
+  if (!participant) return;
+  
+  if (newName === participant.name) {
+    cancelParticipantNameEdit();
+    return;
+  }
+  
+  try {
+    const updated = await db.updateParticipantName(state.selectedParticipantId, newName);
+    showToast(`Nome atualizado para "${updated.name}"!`);
+    
+    // Update local state names
+    participant.name = updated.name;
+    el.participantDetailsNameText().textContent = updated.name;
+    
+    cancelParticipantNameEdit();
+    
+    // Refresh background data to propagate name change
+    await refreshData();
+  } catch (err) {
+    if (err.message && err.message.includes('unique')) {
+      showToast('Este nome já está cadastrado.', 'error');
+    } else {
+      console.error(err);
+      showToast('Erro ao atualizar nome.', 'error');
+    }
+  }
+}
+
+function cancelParticipantNameEdit() {
+  el.participantNameEditContainer().style.display = 'none';
+  el.participantDetailsNameText().style.display = 'block';
+  if (state.isAdmin) {
+    el.btnEditParticipantNameTrigger().style.display = 'inline-flex';
+  }
 }
 
 // Render Recent Activities list
@@ -960,6 +1172,51 @@ function initEvents() {
   
   el.btnCloseParticipant().addEventListener('click', () => {
     toggleModal(el.modalCreateParticipant(), false);
+  });
+
+  // Participant Details Modal Close
+  el.btnCloseParticipantDetails().addEventListener('click', () => {
+    toggleModal(el.modalParticipantDetails(), false);
+  });
+  
+  // Edit Participant Name Trigger
+  el.btnEditParticipantNameTrigger().addEventListener('click', () => {
+    if (!state.isAdmin) return;
+    el.participantDetailsNameText().style.display = 'none';
+    el.btnEditParticipantNameTrigger().style.display = 'none';
+    el.participantNameEditContainer().style.display = 'flex';
+    el.editParticipantNameInput().focus();
+  });
+  
+  el.btnCancelParticipantName().addEventListener('click', () => {
+    cancelParticipantNameEdit();
+  });
+  
+  el.btnSaveParticipantName().addEventListener('click', () => {
+    saveParticipantName();
+  });
+  
+  el.editParticipantNameInput().addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      saveParticipantName();
+    }
+  });
+  
+  // Shortcut to log activity for the participant
+  el.btnDetailsAddActivity().addEventListener('click', () => {
+    if (!state.isAdmin || !state.selectedParticipantId) return;
+    
+    // Select the current participant in the log activity form
+    el.logParticipantSelect().value = state.selectedParticipantId;
+    
+    // Close details modal
+    toggleModal(el.modalParticipantDetails(), false);
+    
+    // Set default date to today
+    el.logDateInput().value = new Date().toISOString().split('T')[0];
+    
+    // Open log activity modal
+    toggleModal(el.modalLog(), true);
   });
   
   // Create Participant form submit

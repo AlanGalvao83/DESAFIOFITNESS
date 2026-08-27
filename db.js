@@ -417,6 +417,34 @@ export async function createParticipant(name) {
   return data[0];
 }
 
+export async function updateParticipantName(id, name) {
+  if (isDemoActive()) {
+    initMockData();
+    const list = JSON.parse(localStorage.getItem('MOCK_PARTICIPANTS'));
+    const p = list.find(item => item.id === id);
+    if (p) {
+      // Check unique constraint for mock mode
+      if (list.some(item => item.id !== id && item.name.toLowerCase() === name.trim().toLowerCase())) {
+        throw new Error('unique constraint error: participant exists');
+      }
+      p.name = name.trim();
+      localStorage.setItem('MOCK_PARTICIPANTS', JSON.stringify(list));
+    }
+    return p;
+  }
+  
+  if (!supabase) throw new Error('Supabase client not configured.');
+  
+  const { data, error } = await supabase
+    .from('participants')
+    .update({ name: name.trim() })
+    .eq('id', id)
+    .select();
+    
+  if (error) throw error;
+  return data[0];
+}
+
 // ----------------------------------------------------
 // Activities
 // ----------------------------------------------------
@@ -480,6 +508,62 @@ export async function logActivity({ challengeId, participantId, type, amount, du
     
   if (error) throw error;
   return data[0];
+}
+
+export async function deleteActivity(id) {
+  if (isDemoActive()) {
+    initMockData();
+    let list = JSON.parse(localStorage.getItem('MOCK_ACTIVITIES'));
+    list = list.filter(item => item.id !== id);
+    localStorage.setItem('MOCK_ACTIVITIES', JSON.stringify(list));
+    return true;
+  }
+  
+  if (!supabase) throw new Error('Supabase client not configured.');
+  
+  const { error } = await supabase
+    .from('activities')
+    .delete()
+    .eq('id', id);
+    
+  if (error) throw error;
+  return true;
+}
+
+export async function getParticipantActivities(participantId, challengeId) {
+  if (isDemoActive()) {
+    initMockData();
+    let list = JSON.parse(localStorage.getItem('MOCK_ACTIVITIES'))
+      .filter(a => a.participant_id === participantId && a.challenge_id === challengeId);
+      
+    const participants = JSON.parse(localStorage.getItem('MOCK_PARTICIPANTS'));
+    list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    list.forEach(a => {
+      a.participant = { name: participants.find(p => p.id === a.participant_id)?.name || 'Deletado' };
+      if (a.validator_id) {
+        a.validator = { name: participants.find(p => p.id === a.validator_id)?.name || '' };
+      }
+    });
+    
+    return list;
+  }
+  
+  if (!supabase) throw new Error('Supabase client not configured.');
+  
+  const { data, error } = await supabase
+    .from('activities')
+    .select(`
+      *,
+      participant:participants!activities_participant_id_fkey(name),
+      validator:participants!activities_validator_id_fkey(name)
+    `)
+    .eq('participant_id', participantId)
+    .eq('challenge_id', challengeId)
+    .order('created_at', { ascending: false });
+    
+  if (error) throw error;
+  return data;
 }
 
 export async function getRecentActivities(challengeId, limit = 30) {
