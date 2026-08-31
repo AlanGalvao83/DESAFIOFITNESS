@@ -1442,3 +1442,250 @@ body.admin-active .admin-banner {
   color: var(--text-primary);
 }
 
+/* ==================================================== */
+/* Sidebar Navigation & Layout Styling                 */
+/* ==================================================== */
+
+#app {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 1.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 200;
+  transition: var(--transition-normal);
+}
+
+.sidebar-brand {
+  margin-bottom: 2.5rem;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.sidebar-link {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  transition: var(--transition-fast);
+}
+
+.sidebar-link i {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+}
+
+.sidebar-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-link:hover i {
+  color: var(--text-secondary);
+}
+
+.sidebar-link.active {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.15);
+  color: var(--accent-purple);
+}
+
+.sidebar-link.active i {
+  color: var(--accent-purple);
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Footer trigger custom visual */
+.sidebar-footer .btn-admin-trigger {
+  width: 100%;
+}
+
+.main-content {
+  margin-left: 260px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mobile-header {
+  display: none;
+}
+
+/* Sections Control */
+.content-section {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+.content-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================================================== */
+/* Responsividade Mobile para Sidebar                  */
+/* ==================================================== */
+
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 64px;
+    flex-direction: row;
+    padding: 0.25rem 0.5rem;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    background: rgba(8, 11, 17, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    z-index: 999;
+  }
+
+  .sidebar-brand {
+    display: none;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    gap: 0.25rem;
+    width: 75%;
+    justify-content: space-around;
+  }
+
+  .sidebar-link {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    justify-content: center;
+    width: auto;
+    border: none;
+    background: transparent;
+  }
+
+  .sidebar-link i {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sidebar-link span {
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+
+  .sidebar-footer {
+    border-top: none;
+    padding-top: 0;
+    width: 25%;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .sidebar-footer .btn-admin-trigger {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    justify-content: center;
+    width: auto;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+  }
+  
+  .sidebar-footer .btn-admin-trigger i {
+    width: 20px;
+    height: 20px;
+    margin: 0 !important;
+  }
+  
+  .sidebar-footer .btn-admin-trigger span {
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+  
+  .sidebar-footer .btn-reset-config {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding-bottom: 70px;
+  }
+
+  .mobile-header {
+    display: block;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(8, 11, 17, 0.75);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .mobile-header .logo {
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+  }
+  
+  main {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+

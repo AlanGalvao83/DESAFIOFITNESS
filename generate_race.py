@@ -108,7 +108,7 @@ def main():
                 filename=output_filename,
                 orientation='h',
                 sort='desc',
-                n_bars=len(participants),
+                n_bars=min(10, len(participants)),
                 fixed_order=False,
                 fixed_max=True,
                 steps_per_period=10,

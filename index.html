@@ -21,214 +21,263 @@
   <!-- App Main Container -->
   <div id="app">
     
-    <!-- Navigation / Header -->
-    <header>
-      <div class="nav-container">
-        <a href="#" class="logo" id="app-logo">
+    <!-- Sidebar / Navigation Menu -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <a href="#" class="logo">
           <i data-lucide="dumbbell"></i>
           <span>WORKFIT</span>
         </a>
-        <nav class="nav-user">
-          <button class="btn-admin-trigger" id="btn-admin-trigger" aria-label="Área do Administrador">
-            <i data-lucide="shield"></i> <span id="admin-btn-text">Área do Admin</span>
-          </button>
-        </nav>
       </div>
-    </header>
+      <nav class="sidebar-menu">
+        <button class="sidebar-link active" id="link-dashboard" type="button">
+          <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+        </button>
+        <button class="sidebar-link" id="link-race" type="button">
+          <i data-lucide="award"></i> <span>Corrida Animada</span>
+        </button>
+        <button class="sidebar-link" id="link-history" type="button">
+          <i data-lucide="trending-up"></i> <span>Evolução Geral</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-admin-trigger" id="btn-admin-trigger" aria-label="Área do Administrador">
+          <i data-lucide="shield"></i> <span id="admin-btn-text">Área do Admin</span>
+        </button>
+        <button class="btn btn-sm admin-only" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color); display: none; width: 100%; margin-top: 0.5rem;" aria-label="Desconectar banco de dados">
+          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span>Desconectar Banco</span>
+        </button>
+      </div>
+    </aside>
 
-    <!-- Main Layout -->
-    <main>
+    <!-- Main Content Area -->
+    <div class="main-content">
       
-      <!-- Top Title and Challenge Selector -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-          <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800; margin: 0;">Painel de Performance</h1>
-          <div id="challenge-dates-countdown" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-            <!-- Dynamically populated in app.js -->
-          </div>
-        </div>
-        
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <!-- Challenge Selector Dropdown -->
-          <div class="challenge-selector-container">
-            <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
-            <select class="challenge-select" id="challenge-selector" aria-label="Selecionar Desafio">
-              <!-- Dynamically populated with active and past challenges -->
-            </select>
-          </div>
-          
-          <button class="btn btn-sm admin-only" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color); display: none;" aria-label="Desconectar banco de dados">
-            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span>Desconectar Banco</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Current Leaders Podium (Prizes Highlight) -->
-      <section id="challenge-goals-card" aria-label="Líderes Atuais e Premiação">
-        <div class="leaders-grid">
-          <!-- Top of the Day Card -->
-          <div class="leader-podium-card top-day-leader">
-            <div class="leader-trophy">
-              <i data-lucide="crown"></i>
-            </div>
-            <div class="leader-podium-info">
-              <div class="leader-podium-label">
-                <i data-lucide="zap" style="width: 14px; height: 14px; color: var(--accent-amber);"></i> TOP DO DIA (Esforço Relativo)
-              </div>
-              <div class="leader-podium-name" id="top-day-leader-name">Ninguém ainda</div>
-              <div class="leader-podium-value" id="top-day-leader-value">Total: <strong>0</strong> pts</div>
-            </div>
-          </div>
-
-          <!-- Pushup Leader Card -->
-          <div class="leader-podium-card pushup-leader">
-            <div class="leader-trophy">
-              <i data-lucide="dumbbell"></i>
-            </div>
-            <div class="leader-podium-info">
-              <div class="leader-podium-label">
-                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Flexões (Brinde 🎁)
-              </div>
-              <div class="leader-podium-name" id="pushup-leader-name">Ninguém ainda</div>
-              <div class="leader-podium-value" id="pushup-leader-value">Total: <strong>0</strong> reps</div>
-            </div>
-          </div>
-          
-          <!-- Running Leader Card -->
-          <div class="leader-podium-card running-leader">
-            <div class="leader-trophy">
-              <i data-lucide="footprints"></i>
-            </div>
-            <div class="leader-podium-info">
-              <div class="leader-podium-label">
-                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Corrida (Brinde 🎁)
-              </div>
-              <div class="leader-podium-name" id="running-leader-name">Ninguém ainda</div>
-              <div class="leader-podium-value" id="running-leader-value">Total: <strong>0</strong> km</div>
-            </div>
-          </div>
-
-          <!-- Cycling Leader Card -->
-          <div class="leader-podium-card cycling-leader">
-            <div class="leader-trophy">
-              <i data-lucide="bike"></i>
-            </div>
-            <div class="leader-podium-info">
-              <div class="leader-podium-label">
-                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Bike (Brinde 🎁)
-              </div>
-              <div class="leader-podium-name" id="cycling-leader-name">Ninguém ainda</div>
-              <div class="leader-podium-value" id="cycling-leader-value">Total: <strong>0</strong> km</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Empty State for inactive challenge -->
-      <section class="card" id="no-challenge-card" style="display: none; padding: 3rem; text-align: center;">
-        <div class="empty-state">
-          <i data-lucide="calendar-x" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-          <h3 style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Nenhum Desafio Ativo</h3>
-          <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem auto;">
-            Não há nenhum desafio ativo no momento. Peça ao administrador para iniciar um novo período de desafio!
-          </p>
-          <button class="btn btn-primary admin-only" id="btn-no-challenge-create" style="display: none;">
-            <i data-lucide="plus-circle"></i> Iniciar Primeiro Desafio
-          </button>
-        </div>
-      </section>
-
-      <!-- Overall Numbers Grid -->
-      <section class="summary-grid" id="stats-summary-grid" aria-label="Estatísticas Gerais">
-        <div class="card stat-card purple">
-          <div class="stat-info">
-            <h3>Flexões Registradas</h3>
-            <span class="stat-value" id="total-pushups-value">0</span>
-          </div>
-          <div class="stat-icon">
+      <!-- Mobile Top Header -->
+      <header class="mobile-header">
+        <div class="nav-container">
+          <a href="#" class="logo">
             <i data-lucide="dumbbell"></i>
-          </div>
+            <span>WORKFIT</span>
+          </a>
         </div>
+      </header>
 
-        <div class="card stat-card cyan">
-          <div class="stat-info">
-            <h3>Corridas (Distância)</h3>
-            <span class="stat-value" id="total-distance-value">0 km</span>
-          </div>
-          <div class="stat-icon">
-            <i data-lucide="footprints"></i>
-          </div>
-        </div>
-
-        <div class="card stat-card amber">
-          <div class="stat-info">
-            <h3>Bike (Distância)</h3>
-            <span class="stat-value" id="total-cycling-value">0 km</span>
-          </div>
-          <div class="stat-icon">
-            <i data-lucide="bike"></i>
-          </div>
-        </div>
-
-        <div class="card stat-card emerald">
-          <div class="stat-info">
-            <h3>Participantes</h3>
-            <span class="stat-value" id="active-participants-value">0</span>
-          </div>
-          <div class="stat-icon">
-            <i data-lucide="users"></i>
-          </div>
-        </div>
-      </section>
-
-      <!-- Dashboard Columns Split -->
-      <div class="dashboard-layout" id="dashboard-main-layout">
+      <!-- Main Layout -->
+      <main>
         
-        <!-- Left Side: Leaderboard & Chart -->
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
+        <!-- Top Title and Challenge Selector -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800; margin: 0;">Painel de Performance</h1>
+            <div id="challenge-dates-countdown" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+              <!-- Dynamically populated in app.js -->
+            </div>
+          </div>
           
-          <!-- Rankings -->
-          <section class="card" aria-labelledby="leaderboard-title">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
-              <h2 id="leaderboard-title" class="section-title" style="margin: 0;"><i data-lucide="award"></i> Classificação Geral</h2>
-              
-              <!-- Admin Only Actions in Rankings Header -->
-              <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-primary admin-only" id="btn-open-log" style="display: none;" aria-label="Lançar nova atividade">
-                  <i data-lucide="plus"></i> <span>Lançar Atividade</span>
-                </button>
-                <button class="btn admin-only" id="btn-open-participant" style="display: none;" aria-label="Cadastrar novo participante">
-                  <i data-lucide="user-plus"></i> <span>Novo Participante</span>
-                </button>
-                <button class="btn admin-only" id="btn-open-challenge" style="display: none;" aria-label="Gerenciar desafios">
-                  <i data-lucide="settings"></i> <span>Desafios</span>
-                </button>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <!-- Challenge Selector Dropdown -->
+            <div class="challenge-selector-container">
+              <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+              <select class="challenge-select" id="challenge-selector" aria-label="Selecionar Desafio">
+                <!-- Dynamically populated with active and past challenges -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 1: DASHBOARD -->
+        <div id="section-dashboard" class="content-section active">
+          <!-- Current Leaders Podium (Prizes Highlight) -->
+          <section id="challenge-goals-card" aria-label="Líderes Atuais e Premiação">
+            <div class="leaders-grid">
+              <!-- Top of the Day Card -->
+              <div class="leader-podium-card top-day-leader">
+                <div class="leader-trophy">
+                  <i data-lucide="crown"></i>
+                </div>
+                <div class="leader-podium-info">
+                  <div class="leader-podium-label">
+                    <i data-lucide="zap" style="width: 14px; height: 14px; color: var(--accent-amber);"></i> TOP DO DIA (Esforço Relativo)
+                  </div>
+                  <div class="leader-podium-name" id="top-day-leader-name">Ninguém ainda</div>
+                  <div class="leader-podium-value" id="top-day-leader-value">Total: <strong>0</strong> pts</div>
+                </div>
               </div>
-            </div>
 
-            <!-- Tabs -->
-            <div class="leaderboard-tabs" role="tablist">
-              <button class="tab-btn active active-purple" id="tab-pushups" role="tab" aria-selected="true" aria-controls="leaderboard-list">
-                <i data-lucide="dumbbell"></i> Flexões
-              </button>
-              <button class="tab-btn" id="tab-running" role="tab" aria-selected="false" aria-controls="leaderboard-list">
-                <i data-lucide="footprints"></i> Corrida
-              </button>
-              <button class="tab-btn" id="tab-cycling" role="tab" aria-selected="false" aria-controls="leaderboard-list">
-                <i data-lucide="bike"></i> Bike
-              </button>
-            </div>
+              <!-- Pushup Leader Card -->
+              <div class="leader-podium-card pushup-leader">
+                <div class="leader-trophy">
+                  <i data-lucide="dumbbell"></i>
+                </div>
+                <div class="leader-podium-info">
+                  <div class="leader-podium-label">
+                    <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Flexões (Brinde 🎁)
+                  </div>
+                  <div class="leader-podium-name" id="pushup-leader-name">Ninguém ainda</div>
+                  <div class="leader-podium-value" id="pushup-leader-value">Total: <strong>0</strong> reps</div>
+                </div>
+              </div>
+              
+              <!-- Running Leader Card -->
+              <div class="leader-podium-card running-leader">
+                <div class="leader-trophy">
+                  <i data-lucide="footprints"></i>
+                </div>
+                <div class="leader-podium-info">
+                  <div class="leader-podium-label">
+                    <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Corrida (Brinde 🎁)
+                  </div>
+                  <div class="leader-podium-name" id="running-leader-name">Ninguém ainda</div>
+                  <div class="leader-podium-value" id="running-leader-value">Total: <strong>0</strong> km</div>
+                </div>
+              </div>
 
-            <!-- Leaderboard Items Container -->
-            <div class="leaderboard-list" id="leaderboard-list">
-              <!-- Dynamically populated -->
+              <!-- Cycling Leader Card -->
+              <div class="leader-podium-card cycling-leader">
+                <div class="leader-trophy">
+                  <i data-lucide="bike"></i>
+                </div>
+                <div class="leader-podium-info">
+                  <div class="leader-podium-label">
+                    <i data-lucide="award" style="width: 14px; height: 14px;"></i> Líder de Bike (Brinde 🎁)
+                  </div>
+                  <div class="leader-podium-name" id="cycling-leader-name">Ninguém ainda</div>
+                  <div class="leader-podium-value" id="cycling-leader-value">Total: <strong>0</strong> km</div>
+                </div>
+              </div>
             </div>
           </section>
 
-          <!-- History Chart -->
-          <section class="card" aria-labelledby="history-chart-title">
+          <!-- Empty State for inactive challenge -->
+          <section class="card" id="no-challenge-card" style="display: none; padding: 3rem; text-align: center;">
+            <div class="empty-state">
+              <i data-lucide="calendar-x" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+              <h3 style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Nenhum Desafio Ativo</h3>
+              <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem auto;">
+                Não há nenhum desafio ativo no momento. Peça ao administrador para iniciar um novo período de desafio!
+              </p>
+              <button class="btn btn-primary admin-only" id="btn-no-challenge-create" style="display: none;">
+                <i data-lucide="plus-circle"></i> Iniciar Primeiro Desafio
+              </button>
+            </div>
+          </section>
+
+          <!-- Overall Numbers Grid -->
+          <section class="summary-grid" id="stats-summary-grid" aria-label="Estatísticas Gerais">
+            <div class="card stat-card purple">
+              <div class="stat-info">
+                <h3>Flexões Registradas</h3>
+                <span class="stat-value" id="total-pushups-value">0</span>
+              </div>
+              <div class="stat-icon">
+                <i data-lucide="dumbbell"></i>
+              </div>
+            </div>
+
+            <div class="card stat-card cyan">
+              <div class="stat-info">
+                <h3>Corridas (Distância)</h3>
+                <span class="stat-value" id="total-distance-value">0 km</span>
+              </div>
+              <div class="stat-icon">
+                <i data-lucide="footprints"></i>
+              </div>
+            </div>
+
+            <div class="card stat-card amber">
+              <div class="stat-info">
+                <h3>Bike (Distância)</h3>
+                <span class="stat-value" id="total-cycling-value">0 km</span>
+              </div>
+              <div class="stat-icon">
+                <i data-lucide="bike"></i>
+              </div>
+            </div>
+
+            <div class="card stat-card emerald">
+              <div class="stat-info">
+                <h3>Participantes</h3>
+                <span class="stat-value" id="active-participants-value">0</span>
+              </div>
+              <div class="stat-icon">
+                <i data-lucide="users"></i>
+              </div>
+            </div>
+          </section>
+
+          <!-- Dashboard Columns Split -->
+          <div class="dashboard-layout" id="dashboard-main-layout">
+            
+            <!-- Left Side: Leaderboard -->
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+              
+              <!-- Rankings -->
+              <section class="card" aria-labelledby="leaderboard-title">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                  <h2 id="leaderboard-title" class="section-title" style="margin: 0;"><i data-lucide="award"></i> Classificação Geral</h2>
+                  
+                  <!-- Admin Only Actions in Rankings Header -->
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary admin-only" id="btn-open-log" style="display: none;" aria-label="Lançar nova atividade">
+                      <i data-lucide="plus"></i> <span>Lançar Atividade</span>
+                    </button>
+                    <button class="btn admin-only" id="btn-open-participant" style="display: none;" aria-label="Cadastrar novo participante">
+                      <i data-lucide="user-plus"></i> <span>Novo Participante</span>
+                    </button>
+                    <button class="btn admin-only" id="btn-open-challenge" style="display: none;" aria-label="Gerenciar desafios">
+                      <i data-lucide="settings"></i> <span>Desafios</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="leaderboard-tabs" role="tablist">
+                  <button class="tab-btn active active-purple" id="tab-pushups" role="tab" aria-selected="true" aria-controls="leaderboard-list">
+                    <i data-lucide="dumbbell"></i> Flexões
+                  </button>
+                  <button class="tab-btn" id="tab-running" role="tab" aria-selected="false" aria-controls="leaderboard-list">
+                    <i data-lucide="footprints"></i> Corrida
+                  </button>
+                  <button class="tab-btn" id="tab-cycling" role="tab" aria-selected="false" aria-controls="leaderboard-list">
+                    <i data-lucide="bike"></i> Bike
+                  </button>
+                </div>
+
+                <!-- Leaderboard Items Container -->
+                <div class="leaderboard-list" id="leaderboard-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </section>
+            </div>
+
+            <!-- Right Side: Activities Feed -->
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+              <!-- Recent Activities -->
+              <section class="card" aria-labelledby="feed-title">
+                <h2 id="feed-title" class="section-title"><i data-lucide="activity"></i> Atividades Recentes</h2>
+                <div class="feed-list" id="recent-activities-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </section>
+
+              <!-- Strava Club Widget -->
+              <section class="card" aria-labelledby="strava-title">
+                <h2 id="strava-title" class="section-title"><i data-lucide="footprints" style="color: #fc4c02;"></i> Clube no Strava</h2>
+                <div style="display: flex; justify-content: center; width: 100%;">
+                  <iframe allowtransparency='true' frameborder='0' height='454' scrolling='no' src='https://www.strava.com/clubs/2309004/latest-rides/a14423f85f9ea15b0ca0e929b4a5e067b73fd83b?show_rides=true' width='100%' style='border: none; max-width: 300px; border-radius: var(--radius-sm);'></iframe>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECTION 2: BAR CHART RACE (CORRIDA ANIMADA) -->
+        <div id="section-race" class="content-section">
+          <section class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
-              <h2 id="history-chart-title" class="section-title" style="margin: 0;"><i data-lucide="trending-up"></i> Histórico do Desafio</h2>
+              <h2 class="section-title" style="margin: 0;"><i data-lucide="award"></i> Corrida de Classificação (Top 10)</h2>
               
               <!-- Race Controls -->
               <div id="race-controls-panel" style="display: flex; align-items: center; gap: 0.75rem; flex: 1; justify-content: flex-end; max-width: 100%;">
@@ -242,33 +291,25 @@
                 <input type="range" id="race-progress-slider" style="flex: 1; accent-color: var(--accent-purple); display: none; height: 6px; min-width: 100px; margin: 0;" min="0" value="0">
               </div>
             </div>
-            <div class="chart-container">
-              <canvas id="history-chart"></canvas>
+            
+            <div class="chart-container" style="height: 480px;">
+              <canvas id="race-chart"></canvas>
             </div>
           </section>
         </div>
 
-        <!-- Right Side: Activities Feed -->
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
-          <!-- Recent Activities -->
-          <section class="card" aria-labelledby="feed-title">
-            <h2 id="feed-title" class="section-title"><i data-lucide="activity"></i> Atividades Recentes</h2>
-            <div class="feed-list" id="recent-activities-list">
-              <!-- Dynamically populated -->
-            </div>
-          </section>
-
-          <!-- Strava Club Widget -->
-          <section class="card" aria-labelledby="strava-title">
-            <h2 id="strava-title" class="section-title"><i data-lucide="footprints" style="color: #fc4c02;"></i> Clube no Strava</h2>
-            <div style="display: flex; justify-content: center; width: 100%;">
-              <iframe allowtransparency='true' frameborder='0' height='454' scrolling='no' src='https://www.strava.com/clubs/2309004/latest-rides/a14423f85f9ea15b0ca0e929b4a5e067b73fd83b?show_rides=true' width='100%' style='border: none; max-width: 300px; border-radius: var(--radius-sm);'></iframe>
+        <!-- SECTION 3: EVOLUTION CHART (HISTÓRICO GERAL) -->
+        <div id="section-history" class="content-section">
+          <section class="card">
+            <h2 class="section-title"><i data-lucide="trending-up"></i> Histórico de Desempenho (Últimos 7 Dias)</h2>
+            <div class="chart-container" style="height: 380px;">
+              <canvas id="evolution-chart"></canvas>
             </div>
           </section>
         </div>
 
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- Toast Notification Container -->

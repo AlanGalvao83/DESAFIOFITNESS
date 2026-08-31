@@ -15,7 +15,9 @@ const state = {
   },
   recentActivities: [],
   activeTab: 'pushup', // 'pushup', 'running', or 'cycling'
-  chartInstance: null,
+  activeSection: 'dashboard',
+  raceChartInstance: null,
+  evolutionChartInstance: null,
   hasAdminCredentials: false,
   selectedParticipantId: null,
   selectedParticipantActivities: [],
@@ -121,7 +123,15 @@ const el = {
   btnPlayRace: () => document.getElementById('btn-play-race'),
   btnResetRace: () => document.getElementById('btn-reset-race'),
   raceCurrentDate: () => document.getElementById('race-current-date'),
-  raceProgressSlider: () => document.getElementById('race-progress-slider')
+  raceProgressSlider: () => document.getElementById('race-progress-slider'),
+  
+  // Sidebar elements
+  linkDashboard: () => document.getElementById('link-dashboard'),
+  linkRace: () => document.getElementById('link-race'),
+  linkHistory: () => document.getElementById('link-history'),
+  sectionDashboard: () => document.getElementById('section-dashboard'),
+  sectionRace: () => document.getElementById('section-race'),
+  sectionHistory: () => document.getElementById('section-history')
 };
 
 // ----------------------------------------------------
@@ -323,7 +333,11 @@ async function refreshData(forceReloadChallenges = false) {
     renderLeaderboard();
     renderRecentActivities();
     await initRaceControls(currentChallenge);
-    renderCharts(currentChallenge);
+    if (state.activeSection === 'race') {
+      renderCharts(currentChallenge);
+    } else if (state.activeSection === 'history') {
+      renderEvolutionChart(currentChallenge);
+    }
     
     // Update admin challenge management modal values
     updateChallengeModalAdminPanel();
@@ -913,12 +927,36 @@ function renderRecentActivities() {
 }
 
 // Render dynamic charts
+function switchSection(sectionId) {
+  pauseRace();
+  state.activeSection = sectionId;
+  
+  el.linkDashboard().classList.toggle('active', sectionId === 'dashboard');
+  el.linkRace().classList.toggle('active', sectionId === 'race');
+  el.linkHistory().classList.toggle('active', sectionId === 'history');
+  
+  el.sectionDashboard().classList.toggle('active', sectionId === 'dashboard');
+  el.sectionRace().classList.toggle('active', sectionId === 'race');
+  el.sectionHistory().classList.toggle('active', sectionId === 'history');
+  
+  const currentChallenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+  if (currentChallenge) {
+    if (sectionId === 'race') {
+      initRaceControls(currentChallenge).then(() => renderCharts(currentChallenge));
+    } else if (sectionId === 'history') {
+      renderEvolutionChart(currentChallenge);
+    }
+  }
+  lucide.createIcons();
+}
+
+// Render dynamic charts
 function renderCharts(challenge) {
-  const ctx = document.getElementById('history-chart');
+  const ctx = document.getElementById('race-chart');
   if (!ctx || !challenge) return;
   
-  if (state.chartInstance) {
-    state.chartInstance.destroy();
+  if (state.raceChartInstance) {
+    state.raceChartInstance.destroy();
   }
 
   // Ensure participant colors are initialized
@@ -938,14 +976,15 @@ function renderCharts(challenge) {
 
   const dataForDate = state.raceDataByDate[date] || {};
   
-  // Sort participants by accumulated value
+  // Sort participants by accumulated value and limit to TOP 10
   const sorted = state.participants
     .map(p => ({
       name: p.name,
       value: dataForDate[p.id] || 0,
       color: state.participantColors[p.id]
     }))
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
 
   const labels = sorted.map(s => s.name);
   const dataValues = sorted.map(s => s.value);
@@ -961,7 +1000,7 @@ function renderCharts(challenge) {
     axisColor = '#f59e0b';
   }
 
-  state.chartInstance = new Chart(ctx, {
+  state.raceChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -995,6 +1034,114 @@ function renderCharts(challenge) {
         y: {
           grid: { drawOnChartArea: false },
           ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+        }
+      }
+    }
+  });
+}
+
+function renderEvolutionChart(challenge) {
+  const ctx = document.getElementById('evolution-chart');
+  if (!ctx || !challenge) return;
+  
+  if (state.evolutionChartInstance) {
+    state.evolutionChartInstance.destroy();
+  }
+  
+  const days = {};
+  const endLimitDate = challenge.status === 'active' 
+    ? new Date() 
+    : new Date(challenge.end_date + 'T23:59:59');
+    
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(endLimitDate);
+    d.setDate(d.getDate() - i);
+    const dayStr = d.toISOString().split('T')[0];
+    days[dayStr] = { running: 0, pushups: 0, cycling: 0 };
+  }
+  
+  state.recentActivities.forEach(act => {
+    if (days[act.date]) {
+      if (act.type === 'running') {
+        days[act.date].running += act.amount;
+      } else if (act.type === 'pushup') {
+        days[act.date].pushups += act.amount;
+      } else if (act.type === 'cycling') {
+        days[act.date].cycling += act.amount;
+      }
+    }
+  });
+  
+  const labels = Object.keys(days).map(formatDate);
+  const runningData = Object.values(days).map(d => d.running);
+  const pushupsData = Object.values(days).map(d => d.pushups);
+  const cyclingData = Object.values(days).map(d => d.cycling);
+  
+  state.evolutionChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Corrida (km)',
+          data: runningData,
+          backgroundColor: 'rgba(6, 182, 212, 0.4)',
+          borderColor: '#06b6d4',
+          borderWidth: 2,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Bike (km)',
+          data: cyclingData,
+          backgroundColor: 'rgba(245, 158, 11, 0.4)',
+          borderColor: '#f59e0b',
+          borderWidth: 2,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Flexões',
+          data: pushupsData,
+          type: 'line',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderColor: '#8b5cf6',
+          borderWidth: 3,
+          pointBackgroundColor: '#8b5cf6',
+          tension: 0.4,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#9ca3af',
+            font: { family: 'Outfit' }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+        },
+        y: {
+          type: 'linear',
+          position: 'left',
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+          title: { display: true, text: 'Distância (km)', color: '#06b6d4' }
+        },
+        y1: {
+          type: 'linear',
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+          title: { display: true, text: 'Flexões (Reps)', color: '#8b5cf6' }
         }
       }
     }
@@ -1168,15 +1315,16 @@ function updateRaceFrame() {
       value: dataForDate[p.id] || 0,
       color: state.participantColors[p.id]
     }))
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
 
-  if (state.chartInstance) {
-    state.chartInstance.data.labels = sorted.map(s => s.name);
-    state.chartInstance.data.datasets[0].data = sorted.map(s => s.value);
-    state.chartInstance.data.datasets[0].backgroundColor = sorted.map(s => s.color);
-    state.chartInstance.data.datasets[0].borderColor = sorted.map(s => s.color);
-    state.chartInstance.options.animation.duration = 400;
-    state.chartInstance.update();
+  if (state.raceChartInstance) {
+    state.raceChartInstance.data.labels = sorted.map(s => s.name);
+    state.raceChartInstance.data.datasets[0].data = sorted.map(s => s.value);
+    state.raceChartInstance.data.datasets[0].backgroundColor = sorted.map(s => s.color);
+    state.raceChartInstance.data.datasets[0].borderColor = sorted.map(s => s.color);
+    state.raceChartInstance.options.animation.duration = 400;
+    state.raceChartInstance.update();
   }
 }
 
@@ -1209,6 +1357,11 @@ function initEvents() {
     state.raceCurrentIndex = parseInt(e.target.value);
     updateRaceFrame();
   });
+
+  // Sidebar Navigation Links
+  el.linkDashboard().addEventListener('click', () => switchSection('dashboard'));
+  el.linkRace().addEventListener('click', () => switchSection('race'));
+  el.linkHistory().addEventListener('click', () => switchSection('history'));
   
   // DB Config Form submit (setup overlay)
   el.setupForm().addEventListener('submit', (e) => {
@@ -1557,11 +1710,13 @@ function initEvents() {
     state.activeTab = 'pushup';
     renderLeaderboard();
     
-    // Reset race and update chart for selected tab
-    resetRace();
-    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
-    if (challenge) {
-      initRaceControls(challenge).then(() => renderCharts(challenge));
+    // Reset race and update chart only if currently on race tab
+    if (state.activeSection === 'race') {
+      resetRace();
+      const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+      if (challenge) {
+        initRaceControls(challenge).then(() => renderCharts(challenge));
+      }
     }
   });
   
@@ -1572,11 +1727,13 @@ function initEvents() {
     state.activeTab = 'running';
     renderLeaderboard();
     
-    // Reset race and update chart for selected tab
-    resetRace();
-    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
-    if (challenge) {
-      initRaceControls(challenge).then(() => renderCharts(challenge));
+    // Reset race and update chart only if currently on race tab
+    if (state.activeSection === 'race') {
+      resetRace();
+      const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+      if (challenge) {
+        initRaceControls(challenge).then(() => renderCharts(challenge));
+      }
     }
   });
 
@@ -1587,11 +1744,13 @@ function initEvents() {
     state.activeTab = 'cycling';
     renderLeaderboard();
     
-    // Reset race and update chart for selected tab
-    resetRace();
-    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
-    if (challenge) {
-      initRaceControls(challenge).then(() => renderCharts(challenge));
+    // Reset race and update chart only if currently on race tab
+    if (state.activeSection === 'race') {
+      resetRace();
+      const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+      if (challenge) {
+        initRaceControls(challenge).then(() => renderCharts(challenge));
+      }
     }
   });
 }
