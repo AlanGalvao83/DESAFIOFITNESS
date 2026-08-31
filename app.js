@@ -14,6 +14,7 @@ const state = {
     stats: { totalPushups: 0, totalDistance: 0, totalCycling: 0, participantsCount: 0 } 
   },
   recentActivities: [],
+  challengeActivities: [],
   activeTab: 'pushup', // 'pushup', 'running', or 'cycling'
   activeSection: 'dashboard',
   raceChartInstance: null,
@@ -315,6 +316,7 @@ async function refreshData(forceReloadChallenges = false) {
     // 4. Fetch rankings & recent activities for selected challenge
     state.rankings = await db.getRankings(state.selectedChallengeId);
     state.recentActivities = await db.getRecentActivities(state.selectedChallengeId);
+    state.challengeActivities = await db.getRecentActivities(state.selectedChallengeId, 5000);
     
     // 5. Update overall metrics
     const stats = state.rankings.stats;
@@ -1048,6 +1050,13 @@ function renderEvolutionChart(challenge) {
     state.evolutionChartInstance.destroy();
   }
   
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   const days = {};
   const endLimitDate = challenge.status === 'active' 
     ? new Date() 
@@ -1056,11 +1065,11 @@ function renderEvolutionChart(challenge) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(endLimitDate);
     d.setDate(d.getDate() - i);
-    const dayStr = d.toISOString().split('T')[0];
+    const dayStr = getLocalDateString(d);
     days[dayStr] = { running: 0, pushups: 0, cycling: 0 };
   }
   
-  state.recentActivities.forEach(act => {
+  state.challengeActivities.forEach(act => {
     if (days[act.date]) {
       if (act.type === 'running') {
         days[act.date].running += act.amount;
@@ -1176,13 +1185,8 @@ async function initRaceControls(challenge) {
     current.setDate(current.getDate() + 1);
   }
 
-  // 2. Fetch all activities for the challenge
-  let activities = [];
-  try {
-    activities = await db.getRecentActivities(challenge.id, 5000);
-  } catch (err) {
-    console.error('Error fetching activities for race:', err);
-  }
+  // 2. Reuse preloaded challenge activities
+  const activities = state.challengeActivities || [];
 
   // 3. Aggreate daily cumulative data
   prepareRaceData(activities);
