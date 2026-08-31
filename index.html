@@ -227,7 +227,21 @@
 
           <!-- History Chart -->
           <section class="card" aria-labelledby="history-chart-title">
-            <h2 id="history-chart-title" class="section-title"><i data-lucide="trending-up"></i> Histórico do Desafio</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h2 id="history-chart-title" class="section-title" style="margin: 0;"><i data-lucide="trending-up"></i> Histórico do Desafio</h2>
+              
+              <!-- Race Controls -->
+              <div id="race-controls-panel" style="display: flex; align-items: center; gap: 0.75rem; flex: 1; justify-content: flex-end; max-width: 100%;">
+                <button class="btn btn-sm" id="btn-play-race" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.2); color: var(--accent-purple); padding: 0.4rem 0.8rem; font-size: 0.8rem; height: 32px; flex-shrink: 0;" type="button">
+                  <i data-lucide="play" style="width: 14px; height: 14px; margin-right: 2px;"></i> <span>Iniciar Corrida</span>
+                </button>
+                <button class="btn btn-sm" id="btn-reset-race" style="background: var(--bg-primary); border-color: var(--border-color); padding: 0.4rem 0.8rem; font-size: 0.8rem; height: 32px; display: none; flex-shrink: 0;" type="button" aria-label="Reiniciar">
+                  <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                </button>
+                <span id="race-current-date" style="font-family: var(--font-title); font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); min-width: 75px; text-align: center; display: none;">-</span>
+                <input type="range" id="race-progress-slider" style="flex: 1; accent-color: var(--accent-purple); display: none; height: 6px; min-width: 100px; margin: 0;" min="0" value="0">
+              </div>
+            </div>
             <div class="chart-container">
               <canvas id="history-chart"></canvas>
             </div>

@@ -18,7 +18,13 @@ const state = {
   chartInstance: null,
   hasAdminCredentials: false,
   selectedParticipantId: null,
-  selectedParticipantActivities: []
+  selectedParticipantActivities: [],
+  raceTimer: null,
+  raceIsRunning: false,
+  raceCurrentIndex: 0,
+  raceDates: [],
+  raceDataByDate: {},
+  participantColors: {}
 };
 
 // ----------------------------------------------------
@@ -111,7 +117,11 @@ const el = {
   btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity'),
   participantTotalActivities: () => document.getElementById('participant-total-activities'),
   participantTotalRunning: () => document.getElementById('participant-total-running'),
-  participantTotalCycling: () => document.getElementById('participant-total-cycling')
+  participantTotalCycling: () => document.getElementById('participant-total-cycling'),
+  btnPlayRace: () => document.getElementById('btn-play-race'),
+  btnResetRace: () => document.getElementById('btn-reset-race'),
+  raceCurrentDate: () => document.getElementById('race-current-date'),
+  raceProgressSlider: () => document.getElementById('race-progress-slider')
 };
 
 // ----------------------------------------------------
@@ -312,6 +322,7 @@ async function refreshData(forceReloadChallenges = false) {
     // 7. Render dynamic lists & charts
     renderLeaderboard();
     renderRecentActivities();
+    await initRaceControls(currentChallenge);
     renderCharts(currentChallenge);
     
     // Update admin challenge management modal values
@@ -909,106 +920,264 @@ function renderCharts(challenge) {
   if (state.chartInstance) {
     state.chartInstance.destroy();
   }
-  
-  // Aggregate activities daily for the last 7 challenge days
-  const days = {};
-  const endLimitDate = challenge.status === 'active' 
-    ? new Date() 
-    : new Date(challenge.end_date + 'T23:59:59');
-    
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(endLimitDate);
-    d.setDate(d.getDate() - i);
-    const dayStr = d.toISOString().split('T')[0];
-    days[dayStr] = { running: 0, pushups: 0, cycling: 0 };
-  }
-  
-  state.recentActivities.forEach(act => {
-    if (days[act.date]) {
-      if (act.type === 'running') {
-        days[act.date].running += act.amount;
-      } else if (act.type === 'pushup') {
-        days[act.date].pushups += act.amount;
-      } else if (act.type === 'cycling') {
-        days[act.date].cycling += act.amount;
-      }
+
+  // Ensure participant colors are initialized
+  state.participants.forEach((p, idx) => {
+    if (!state.participantColors[p.id]) {
+      state.participantColors[p.id] = VIBRANT_COLORS[idx % VIBRANT_COLORS.length];
     }
   });
+
+  // Get current race date or fallback
+  let date;
+  if (state.raceDates.length > 0) {
+    date = state.raceDates[state.raceCurrentIndex];
+  } else {
+    date = challenge.end_date;
+  }
+
+  const dataForDate = state.raceDataByDate[date] || {};
   
-  const labels = Object.keys(days).map(formatDate);
-  const runningData = Object.values(days).map(d => d.running);
-  const pushupsData = Object.values(days).map(d => d.pushups);
-  const cyclingData = Object.values(days).map(d => d.cycling);
-  
+  // Sort participants by accumulated value
+  const sorted = state.participants
+    .map(p => ({
+      name: p.name,
+      value: dataForDate[p.id] || 0,
+      color: state.participantColors[p.id]
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const labels = sorted.map(s => s.name);
+  const dataValues = sorted.map(s => s.value);
+  const colors = sorted.map(s => s.color);
+
+  let axisLabel = 'Flexões';
+  let axisColor = '#8b5cf6';
+  if (state.activeTab === 'running') {
+    axisLabel = 'Distância de Corrida (km)';
+    axisColor = '#06b6d4';
+  } else if (state.activeTab === 'cycling') {
+    axisLabel = 'Distância de Bike (km)';
+    axisColor = '#f59e0b';
+  }
+
   state.chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [
         {
-          label: 'Corrida (km)',
-          data: runningData,
-          backgroundColor: 'rgba(6, 182, 212, 0.4)',
-          borderColor: '#06b6d4',
-          borderWidth: 2,
-          borderRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          label: 'Bike (km)',
-          data: cyclingData,
-          backgroundColor: 'rgba(245, 158, 11, 0.4)',
-          borderColor: '#f59e0b',
-          borderWidth: 2,
-          borderRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          label: 'Flexões',
-          data: pushupsData,
-          type: 'line',
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          borderColor: '#8b5cf6',
-          borderWidth: 3,
-          pointBackgroundColor: '#8b5cf6',
-          tension: 0.4,
-          yAxisID: 'y1'
+          label: axisLabel,
+          data: dataValues,
+          backgroundColor: colors,
+          borderColor: colors,
+          borderWidth: 1,
+          borderRadius: 4
         }
       ]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: state.raceIsRunning ? 400 : 0
+      },
       plugins: {
-        legend: {
-          labels: {
-            color: '#9ca3af',
-            font: { family: 'Outfit' }
-          }
-        }
+        legend: { display: false }
       },
       scales: {
         x: {
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+          ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+          title: { display: true, text: axisLabel, color: axisColor }
         },
         y: {
-          type: 'linear',
-          position: 'left',
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
-          title: { display: true, text: 'Distância (km)', color: '#06b6d4' }
-        },
-        y1: {
-          type: 'linear',
-          position: 'right',
           grid: { drawOnChartArea: false },
-          ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
-          title: { display: true, text: 'Flexões (Reps)', color: '#8b5cf6' }
+          ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
         }
       }
     }
   });
+}
+
+const VIBRANT_COLORS = [
+  '#8b5cf6', // purple
+  '#06b6d4', // cyan
+  '#f59e0b', // amber
+  '#10b981', // emerald
+  '#f43f5e', // rose
+  '#3b82f6', // blue
+  '#ec4899', // pink
+  '#84cc16', // lime
+  '#14b8a6', // teal
+  '#f97316'  // orange
+];
+
+async function initRaceControls(challenge) {
+  if (!challenge) return;
+
+  // 1. Generate daily date array for the challenge
+  state.raceDates = [];
+  const start = new Date(challenge.start_date + 'T00:00:00');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const end = new Date((challenge.status === 'active' && challenge.end_date > todayStr ? todayStr : challenge.end_date) + 'T00:00:00');
+  
+  let current = new Date(start);
+  while (current <= end) {
+    state.raceDates.push(current.toISOString().split('T')[0]);
+    current.setDate(current.getDate() + 1);
+  }
+
+  // 2. Fetch all activities for the challenge
+  let activities = [];
+  try {
+    activities = await db.getRecentActivities(challenge.id, 5000);
+  } catch (err) {
+    console.error('Error fetching activities for race:', err);
+  }
+
+  // 3. Aggreate daily cumulative data
+  prepareRaceData(activities);
+
+  // 4. Setup play controls UI
+  const slider = el.raceProgressSlider();
+  const dateDisplay = el.raceCurrentDate();
+  const resetBtn = el.btnResetRace();
+  const playBtn = el.btnPlayRace();
+
+  if (state.raceDates.length > 1) {
+    slider.max = state.raceDates.length - 1;
+    slider.style.display = 'block';
+    dateDisplay.style.display = 'inline-block';
+    resetBtn.style.display = 'inline-flex';
+    
+    if (!state.raceIsRunning && (state.raceCurrentIndex === 0 || state.raceCurrentIndex >= state.raceDates.length)) {
+      state.raceCurrentIndex = state.raceDates.length - 1;
+    }
+    slider.value = state.raceCurrentIndex;
+    dateDisplay.textContent = formatDate(state.raceDates[state.raceCurrentIndex]);
+  } else {
+    slider.style.display = 'none';
+    dateDisplay.style.display = 'none';
+    resetBtn.style.display = 'none';
+    state.raceCurrentIndex = 0;
+  }
+}
+
+function prepareRaceData(activities) {
+  state.participants.forEach((p, idx) => {
+    if (!state.participantColors[p.id]) {
+      state.participantColors[p.id] = VIBRANT_COLORS[idx % VIBRANT_COLORS.length];
+    }
+  });
+
+  const filtered = activities.filter(act => act.type === state.activeTab && act.status === 'approved');
+
+  const actsByDate = {};
+  filtered.forEach(act => {
+    if (!actsByDate[act.date]) {
+      actsByDate[act.date] = [];
+    }
+    actsByDate[act.date].push(act);
+  });
+
+  const cumulative = {};
+  state.participants.forEach(p => {
+    cumulative[p.id] = 0;
+  });
+
+  state.raceDataByDate = {};
+  state.raceDates.forEach(date => {
+    if (actsByDate[date]) {
+      actsByDate[date].forEach(act => {
+        cumulative[act.participant_id] += parseFloat(act.amount);
+      });
+    }
+    state.raceDataByDate[date] = { ...cumulative };
+  });
+}
+
+function playRace() {
+  if (state.raceIsRunning) {
+    pauseRace();
+    return;
+  }
+
+  if (state.raceCurrentIndex >= state.raceDates.length - 1) {
+    state.raceCurrentIndex = 0;
+  }
+
+  state.raceIsRunning = true;
+  
+  const playBtn = el.btnPlayRace();
+  playBtn.innerHTML = '<i data-lucide="pause" style="width: 14px; height: 14px; margin-right: 2px;"></i> <span>Pausar Corrida</span>';
+  lucide.createIcons();
+  
+  state.raceTimer = setInterval(stepRace, 750);
+}
+
+function pauseRace() {
+  state.raceIsRunning = false;
+  clearInterval(state.raceTimer);
+  
+  const playBtn = el.btnPlayRace();
+  playBtn.innerHTML = '<i data-lucide="play" style="width: 14px; height: 14px; margin-right: 2px;"></i> <span>Continuar Corrida</span>';
+  lucide.createIcons();
+}
+
+function resetRace() {
+  pauseRace();
+  state.raceCurrentIndex = 0;
+  
+  const playBtn = el.btnPlayRace();
+  playBtn.innerHTML = '<i data-lucide="play" style="width: 14px; height: 14px; margin-right: 2px;"></i> <span>Iniciar Corrida</span>';
+  lucide.createIcons();
+  
+  updateRaceFrame();
+}
+
+function stepRace() {
+  state.raceCurrentIndex++;
+  if (state.raceCurrentIndex >= state.raceDates.length) {
+    pauseRace();
+    state.raceCurrentIndex = state.raceDates.length - 1;
+    
+    const playBtn = el.btnPlayRace();
+    playBtn.innerHTML = '<i data-lucide="play" style="width: 14px; height: 14px; margin-right: 2px;"></i> <span>Iniciar Corrida</span>';
+    lucide.createIcons();
+    return;
+  }
+  
+  updateRaceFrame();
+}
+
+function updateRaceFrame() {
+  if (state.raceDates.length === 0) return;
+  
+  const date = state.raceDates[state.raceCurrentIndex];
+  
+  el.raceProgressSlider().value = state.raceCurrentIndex;
+  el.raceCurrentDate().textContent = formatDate(date);
+
+  const dataForDate = state.raceDataByDate[date] || {};
+
+  const sorted = state.participants
+    .map(p => ({
+      name: p.name,
+      value: dataForDate[p.id] || 0,
+      color: state.participantColors[p.id]
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  if (state.chartInstance) {
+    state.chartInstance.data.labels = sorted.map(s => s.name);
+    state.chartInstance.data.datasets[0].data = sorted.map(s => s.value);
+    state.chartInstance.data.datasets[0].backgroundColor = sorted.map(s => s.color);
+    state.chartInstance.data.datasets[0].borderColor = sorted.map(s => s.color);
+    state.chartInstance.options.animation.duration = 400;
+    state.chartInstance.update();
+  }
 }
 
 // ----------------------------------------------------
@@ -1022,6 +1191,23 @@ function initEvents() {
       sessionStorage.removeItem('FITNESS_ADMIN');
       location.reload();
     }
+  });
+
+  // Play/Pause Race
+  el.btnPlayRace().addEventListener('click', () => {
+    playRace();
+  });
+
+  // Reset Race
+  el.btnResetRace().addEventListener('click', () => {
+    resetRace();
+  });
+
+  // Race Progress Slider Drag
+  el.raceProgressSlider().addEventListener('input', (e) => {
+    pauseRace();
+    state.raceCurrentIndex = parseInt(e.target.value);
+    updateRaceFrame();
   });
   
   // DB Config Form submit (setup overlay)
@@ -1370,6 +1556,13 @@ function initEvents() {
     el.tabCycling().classList.remove('active', 'active-amber');
     state.activeTab = 'pushup';
     renderLeaderboard();
+    
+    // Reset race and update chart for selected tab
+    resetRace();
+    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+    if (challenge) {
+      initRaceControls(challenge).then(() => renderCharts(challenge));
+    }
   });
   
   el.tabRunning().addEventListener('click', () => {
@@ -1378,6 +1571,13 @@ function initEvents() {
     el.tabCycling().classList.remove('active', 'active-amber');
     state.activeTab = 'running';
     renderLeaderboard();
+    
+    // Reset race and update chart for selected tab
+    resetRace();
+    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+    if (challenge) {
+      initRaceControls(challenge).then(() => renderCharts(challenge));
+    }
   });
 
   el.tabCycling().addEventListener('click', () => {
@@ -1386,6 +1586,13 @@ function initEvents() {
     el.tabRunning().classList.remove('active', 'active-cyan');
     state.activeTab = 'cycling';
     renderLeaderboard();
+    
+    // Reset race and update chart for selected tab
+    resetRace();
+    const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+    if (challenge) {
+      initRaceControls(challenge).then(() => renderCharts(challenge));
+    }
   });
 }
 
