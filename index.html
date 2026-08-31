@@ -23,29 +23,32 @@
     
     <!-- Sidebar / Navigation Menu -->
     <aside class="sidebar">
-      <div class="sidebar-brand">
+      <div class="sidebar-brand" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <a href="#" class="logo">
           <i data-lucide="dumbbell"></i>
-          <span>WORKFIT</span>
+          <span class="brand-text">WORKFIT</span>
         </a>
+        <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" type="button" aria-label="Recolher menu lateral" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); transition: var(--transition-fast);">
+          <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+        </button>
       </div>
       <nav class="sidebar-menu">
         <button class="sidebar-link active" id="link-dashboard" type="button">
-          <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+          <i data-lucide="layout-dashboard"></i> <span class="link-text">Dashboard</span>
         </button>
         <button class="sidebar-link" id="link-race" type="button">
-          <i data-lucide="award"></i> <span>Corrida Animada</span>
+          <i data-lucide="award"></i> <span class="link-text">Corrida Animada</span>
         </button>
         <button class="sidebar-link" id="link-history" type="button">
-          <i data-lucide="trending-up"></i> <span>Evolução Geral</span>
+          <i data-lucide="trending-up"></i> <span class="link-text">Evolução Geral</span>
         </button>
       </nav>
       <div class="sidebar-footer">
         <button class="btn-admin-trigger" id="btn-admin-trigger" aria-label="Área do Administrador">
-          <i data-lucide="shield"></i> <span id="admin-btn-text">Área do Admin</span>
+          <i data-lucide="shield"></i> <span id="admin-btn-text" class="link-text">Área do Admin</span>
         </button>
         <button class="btn btn-sm admin-only" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color); display: none; width: 100%; margin-top: 0.5rem;" aria-label="Desconectar banco de dados">
-          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span>Desconectar Banco</span>
+          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span class="link-text">Desconectar Banco</span>
         </button>
       </div>
     </aside>

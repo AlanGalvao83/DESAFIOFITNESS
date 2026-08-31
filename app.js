@@ -132,7 +132,9 @@ const el = {
   linkHistory: () => document.getElementById('link-history'),
   sectionDashboard: () => document.getElementById('section-dashboard'),
   sectionRace: () => document.getElementById('section-race'),
-  sectionHistory: () => document.getElementById('section-history')
+  sectionHistory: () => document.getElementById('section-history'),
+  btnToggleSidebar: () => document.getElementById('btn-toggle-sidebar'),
+  sidebar: () => document.querySelector('.sidebar')
 };
 
 // ----------------------------------------------------
@@ -1366,6 +1368,20 @@ function initEvents() {
   el.linkDashboard().addEventListener('click', () => switchSection('dashboard'));
   el.linkRace().addEventListener('click', () => switchSection('race'));
   el.linkHistory().addEventListener('click', () => switchSection('history'));
+
+  // Toggle Sidebar Collapse
+  el.btnToggleSidebar().addEventListener('click', () => {
+    const sidebar = el.sidebar();
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    
+    const toggleIcon = el.btnToggleSidebar().querySelector('i');
+    if (isCollapsed) {
+      toggleIcon.setAttribute('data-lucide', 'chevron-right');
+    } else {
+      toggleIcon.setAttribute('data-lucide', 'chevron-left');
+    }
+    lucide.createIcons();
+  });
   
   // DB Config Form submit (setup overlay)
   el.setupForm().addEventListener('submit', (e) => {
