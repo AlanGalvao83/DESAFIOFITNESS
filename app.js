@@ -29,7 +29,8 @@ const state = {
   raceDataByDate: {},
   participantColors: {},
   participantsSearchTerm: '',
-  previousSection: 'dashboard'
+  previousSection: 'dashboard',
+  profileActiveTab: 'badges'
 };
 
 // ----------------------------------------------------
@@ -123,6 +124,10 @@ const el = {
   btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity'),
   participantBadgesContainer: () => document.getElementById('participant-badges-container'),
   participantBadgesUnlockedCount: () => document.getElementById('participant-badges-unlocked-count'),
+  btnTabBadges: () => document.getElementById('btn-tab-badges'),
+  btnTabHistory: () => document.getElementById('btn-tab-history'),
+  participantCardBadges: () => document.getElementById('participant-card-badges'),
+  participantCardHistory: () => document.getElementById('participant-card-history'),
   
   toastContainer: () => document.getElementById('toast-container'),
   
@@ -1055,13 +1060,31 @@ function renderParticipantsSection() {
         ${miniBadgesHTML}
       </div>
 
-      <button class="btn btn-sm btn-block" style="background: rgba(255, 255, 255, 0.04); border-color: var(--border-color); color: var(--text-secondary); margin-top: auto; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" type="button">
-        <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Ver Perfil & Histórico
-      </button>
+      <div class="participant-card-actions">
+        <button class="btn-action-profile" type="button">
+          <i data-lucide="award"></i> <span>Perfil</span>
+        </button>
+        <button class="btn-action-history" type="button">
+          <i data-lucide="history"></i> <span>Histórico</span>
+        </button>
+      </div>
     `;
 
+    const btnProfile = card.querySelector('.btn-action-profile');
+    const btnHistory = card.querySelector('.btn-action-history');
+
+    btnProfile?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openParticipantDetails(participant.id, 'badges');
+    });
+
+    btnHistory?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openParticipantDetails(participant.id, 'history');
+    });
+
     card.addEventListener('click', () => {
-      openParticipantDetails(participant.id);
+      openParticipantDetails(participant.id, 'badges');
     });
 
     container.appendChild(card);
@@ -1073,7 +1096,15 @@ function renderParticipantsSection() {
 // ----------------------------------------------------
 // Participant Profile & History Page
 // ----------------------------------------------------
-async function openParticipantDetails(participantId) {
+function setProfileTab(tab) {
+  state.profileActiveTab = tab;
+  if (el.btnTabBadges()) el.btnTabBadges().classList.toggle('active', tab === 'badges');
+  if (el.btnTabHistory()) el.btnTabHistory().classList.toggle('active', tab === 'history');
+  if (el.participantCardBadges()) el.participantCardBadges().style.display = (tab === 'badges') ? 'block' : 'none';
+  if (el.participantCardHistory()) el.participantCardHistory().style.display = (tab === 'history') ? 'block' : 'none';
+}
+
+async function openParticipantDetails(participantId, initialTab = 'badges') {
   if (state.activeSection !== 'participant-profile') {
     state.previousSection = state.activeSection || 'dashboard';
   }
@@ -1105,7 +1136,8 @@ async function openParticipantDetails(participantId) {
     }
   }
   
-  // Switch to participant profile page & scroll smoothly to top
+  // Switch to participant profile page & activate chosen tab
+  setProfileTab(initialTab);
   switchSection('participant-profile');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -2238,6 +2270,10 @@ function initEvents() {
   el.btnBackFromProfileMobile()?.addEventListener('click', () => {
     switchSection(state.previousSection || 'dashboard');
   });
+
+  // Participant Profile View Switcher Tabs (Badges vs History)
+  el.btnTabBadges()?.addEventListener('click', () => setProfileTab('badges'));
+  el.btnTabHistory()?.addEventListener('click', () => setProfileTab('history'));
   
   // Edit Participant Name Trigger
   el.btnEditParticipantNameTrigger().addEventListener('click', () => {

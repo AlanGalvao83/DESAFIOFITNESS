@@ -23,7 +23,7 @@
     
     <!-- Sidebar / Navigation Menu -->
     <aside class="sidebar">
-      <div class="sidebar-brand" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <div class="sidebar-brand">
         <a href="#" class="logo">
           <i data-lucide="dumbbell"></i>
           <span class="brand-text">WORKFIT</span>
@@ -68,11 +68,10 @@
           </a>
         </div>
         <div class="mobile-header-profile" id="mobile-header-profile" style="display: none;">
-          <button class="btn btn-sm btn-outline" id="btn-back-from-profile-mobile" type="button" aria-label="Voltar">
+          <button class="btn btn-sm btn-outline btn-back-profile-header" id="btn-back-from-profile-mobile" type="button" aria-label="Voltar">
             <i data-lucide="arrow-left"></i> <span>Voltar</span>
           </button>
           <div class="mobile-header-profile-athlete">
-            <i data-lucide="dumbbell"></i>
             <span id="mobile-participant-name-text">Participante</span>
           </div>
         </div>
@@ -425,8 +424,18 @@
             </div>
           </section>
 
+          <!-- View Switcher Tabs (Perfil/Conquistas vs Histórico) -->
+          <div class="profile-view-tabs" id="profile-view-tabs">
+            <button type="button" class="profile-view-tab-btn active" id="btn-tab-badges">
+              <i data-lucide="award"></i> <span>Perfil & Conquistas</span>
+            </button>
+            <button type="button" class="profile-view-tab-btn" id="btn-tab-history">
+              <i data-lucide="history"></i> <span>Histórico de Treinos</span>
+            </button>
+          </div>
+
           <!-- Badges / Achievements Card -->
-          <section class="card" style="margin-bottom: 1.5rem;">
+          <section class="card" id="participant-card-badges" style="margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
               <h3 style="font-family: var(--font-title); font-size: 1.2rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
                 <i data-lucide="award"></i> Conquistas & Insígnias
@@ -439,7 +448,7 @@
           </section>
 
           <!-- Activities History Card -->
-          <section class="card">
+          <section class="card" id="participant-card-history" style="display: none; margin-bottom: 1.5rem;">
             <h3 style="font-family: var(--font-title); font-size: 1.2rem; margin-bottom: 1.25rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
               <i data-lucide="history"></i> Histórico de Atividades
             </h3>

@@ -1129,10 +1129,7 @@ pre code {
 }
 
 @media (max-width: 480px) {
-  /* Em telas muito estreitas, oculta texto do logo para caber o botão do admin na mesma linha */
-  .logo span {
-    display: none;
-  }
+  /* Em telas muito estreitas */
 }
 
 /* ==================================================== */
@@ -1812,6 +1809,53 @@ body.admin-active .admin-banner {
   font-style: italic;
 }
 
+.participant-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.btn-action-profile,
+.btn-action-history {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.55rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-action-profile {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--accent-amber);
+}
+
+.btn-action-profile:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--accent-amber);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-action-history {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--accent-purple);
+}
+
+.btn-action-history:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-purple);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 /* ==================================================== */
 /* Mural de Conquistas (Badges Wall)                    */
 /* ==================================================== */
@@ -1820,8 +1864,6 @@ body.admin-active .admin-banner {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 0.75rem;
-  max-height: 280px;
-  overflow-y: auto;
   padding-right: 0.25rem;
 }
 
@@ -2111,6 +2153,73 @@ body.admin-active .admin-banner {
   gap: 0.85rem;
 }
 
+.profile-view-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.profile-view-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.profile-view-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.profile-view-tab-btn.active#btn-tab-badges {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+.profile-view-tab-btn.active#btn-tab-history {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent-purple);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.btn-back-profile-header {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition-fast);
+}
+
+.btn-back-profile-header:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-purple);
+  color: #fff;
+}
+
 @media (max-width: 640px) {
   .profile-athlete-name {
     font-size: 1.3rem;
@@ -2163,7 +2272,7 @@ body.admin-active .admin-banner {
   }
 
   .sidebar-brand {
-    display: none;
+    display: none !important;
   }
 
   .sidebar-menu {
