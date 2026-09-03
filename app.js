@@ -28,7 +28,8 @@ const state = {
   raceDates: [],
   raceDataByDate: {},
   participantColors: {},
-  participantsSearchTerm: ''
+  participantsSearchTerm: '',
+  previousSection: 'dashboard'
 };
 
 // ----------------------------------------------------
@@ -106,8 +107,8 @@ const el = {
   logPushupFields: () => document.getElementById('log-pushup-fields'),
   logRunningFields: () => document.getElementById('log-running-fields'),
   
-  modalParticipantDetails: () => document.getElementById('modal-participant-details'),
-  btnCloseParticipantDetails: () => document.getElementById('btn-close-participant-details'),
+  sectionParticipantProfile: () => document.getElementById('section-participant-profile'),
+  btnBackFromProfile: () => document.getElementById('btn-back-from-profile'),
   participantDetailsNameText: () => document.getElementById('participant-details-name-text'),
   btnEditParticipantNameTrigger: () => document.getElementById('btn-edit-participant-name-trigger'),
   participantNameEditContainer: () => document.getElementById('participant-name-edit-container'),
@@ -387,8 +388,8 @@ async function refreshData(forceReloadChallenges = false) {
       renderParticipantsSection();
     }
     
-    // If participant details modal is open, refresh their badges & activities
-    if (state.selectedParticipantId && el.modalParticipantDetails() && el.modalParticipantDetails().classList.contains('active')) {
+    // If participant profile page is active, refresh their badges & activities
+    if (state.selectedParticipantId && state.activeSection === 'participant-profile') {
       const pActivities = await db.getParticipantActivities(state.selectedParticipantId, state.selectedChallengeId);
       state.selectedParticipantActivities = pActivities;
       renderParticipantActivities();
@@ -680,34 +681,34 @@ function renderLeaderboard() {
       }
     }
     
-    // Badges between name and score
+    // Badges row below athlete name
     const ach = calculateParticipantAchievements(item.id, state.challengeActivities);
     let badgesHTML = '';
     if (ach && ach.unlockedBadges && ach.unlockedBadges.length > 0) {
       badgesHTML = `
-        <div class="rank-badges">
+        <div class="rank-badges-row">
           ${ach.unlockedBadges.map(b => `
             <img class="rank-badge-item" src="${encodeURI(b.image)}" alt="${b.name}" title="${b.name}: ${b.desc} (${b.progressText})">
           `).join('')}
         </div>
       `;
-    } else {
-      badgesHTML = `<div class="rank-badges"></div>`;
     }
 
     const rankEl = document.createElement('div');
     rankEl.className = 'leaderboard-item';
     rankEl.innerHTML = `
-      <div class="rank-number">${index + 1}</div>
-      <div class="rank-name">
-        <div>${item.name}</div>
-        ${subtext}
+      <div class="leaderboard-item-main">
+        <div class="rank-number">${index + 1}</div>
+        <div class="rank-name">
+          <div class="rank-athlete-name">${item.name}</div>
+          ${subtext}
+        </div>
+        <div class="rank-score">
+          ${state.activeTab === 'pushup' ? value.toLocaleString('pt-BR') : value.toFixed(1).toLocaleString('pt-BR')}
+          <span class="rank-unit">${unit}</span>
+        </div>
       </div>
       ${badgesHTML}
-      <div class="rank-score">
-        ${state.activeTab === 'pushup' ? value.toLocaleString('pt-BR') : value.toFixed(1).toLocaleString('pt-BR')}
-        <span class="rank-unit">${unit}</span>
-      </div>
     `;
     
     rankEl.addEventListener('click', () => {
@@ -1063,9 +1064,12 @@ function renderParticipantsSection() {
 }
 
 // ----------------------------------------------------
-// Participant Details & History Modal
+// Participant Profile & History Page
 // ----------------------------------------------------
 async function openParticipantDetails(participantId) {
+  if (state.activeSection !== 'participant-profile') {
+    state.previousSection = state.activeSection || 'dashboard';
+  }
   state.selectedParticipantId = participantId;
   const participant = state.participants.find(p => p.id === participantId);
   if (!participant) return;
@@ -1081,20 +1085,26 @@ async function openParticipantDetails(participantId) {
   // Show/Hide admin triggers based on state.isAdmin
   if (state.isAdmin) {
     el.btnEditParticipantNameTrigger().style.display = 'inline-flex';
-    el.btnDetailsAddActivity().parentElement.style.display = 'block';
+    if (el.btnDetailsAddActivity()?.parentElement) {
+      el.btnDetailsAddActivity().parentElement.style.display = 'block';
+    }
   } else {
     el.btnEditParticipantNameTrigger().style.display = 'none';
-    el.btnDetailsAddActivity().parentElement.style.display = 'none';
+    if (el.btnDetailsAddActivity()?.parentElement) {
+      el.btnDetailsAddActivity().parentElement.style.display = 'none';
+    }
   }
   
+  // Switch to participant profile page & scroll smoothly to top
+  switchSection('participant-profile');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
   // Load activities
   el.participantActivitiesList().innerHTML = `
     <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
       <div style="font-size: 0.9rem;">Carregando histórico...</div>
     </div>
   `;
-  
-  toggleModal(el.modalParticipantDetails(), true);
   
   try {
     const activities = await db.getParticipantActivities(participantId, state.selectedChallengeId);
@@ -1557,6 +1567,9 @@ function renderRecentAchievements() {
 // Switch active section in SPA
 function switchSection(sectionId) {
   pauseRace();
+  if (sectionId !== 'participant-profile') {
+    state.previousSection = sectionId;
+  }
   state.activeSection = sectionId;
   
   el.linkDashboard().classList.toggle('active', sectionId === 'dashboard');
@@ -1566,6 +1579,7 @@ function switchSection(sectionId) {
   
   el.sectionDashboard().classList.toggle('active', sectionId === 'dashboard');
   if (el.sectionParticipants()) el.sectionParticipants().classList.toggle('active', sectionId === 'participants');
+  if (el.sectionParticipantProfile()) el.sectionParticipantProfile().classList.toggle('active', sectionId === 'participant-profile');
   el.sectionRace().classList.toggle('active', sectionId === 'race');
   el.sectionHistory().classList.toggle('active', sectionId === 'history');
   
@@ -2192,9 +2206,9 @@ function initEvents() {
     toggleModal(el.modalCreateParticipant(), false);
   });
 
-  // Participant Details Modal Close
-  el.btnCloseParticipantDetails().addEventListener('click', () => {
-    toggleModal(el.modalParticipantDetails(), false);
+  // Participant Profile Back Button
+  el.btnBackFromProfile()?.addEventListener('click', () => {
+    switchSection(state.previousSection || 'dashboard');
   });
   
   // Edit Participant Name Trigger
@@ -2226,9 +2240,6 @@ function initEvents() {
     
     // Select the current participant in the log activity form
     el.logParticipantSelect().value = state.selectedParticipantId;
-    
-    // Close details modal
-    toggleModal(el.modalParticipantDetails(), false);
     
     // Set default date to today
     el.logDateInput().value = new Date().toISOString().split('T')[0];

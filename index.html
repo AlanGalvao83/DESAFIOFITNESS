@@ -352,6 +352,95 @@
           </section>
         </div>
 
+        <!-- SECTION 5: PARTICIPANT PROFILE & HISTORY -->
+        <div id="section-participant-profile" class="content-section">
+          
+          <!-- Top Navigation & Action Bar -->
+          <div class="profile-top-bar">
+            <button class="btn btn-outline" id="btn-back-from-profile" type="button" aria-label="Voltar">
+              <i data-lucide="arrow-left"></i> <span>Voltar</span>
+            </button>
+            
+            <div class="profile-user-header">
+              <div id="participant-name-edit-container" style="display: none; align-items: center; gap: 0.5rem;">
+                <input type="text" id="edit-participant-name-input" style="font-size: 1.25rem; font-weight: 800; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); background: var(--bg-primary); border: 1px solid var(--accent-purple); color: var(--text-primary);" maxlength="20">
+                <button class="btn btn-sm btn-approve" id="btn-save-participant-name" style="padding: 0.5rem;" type="button" title="Salvar">
+                  <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                </button>
+                <button class="btn btn-sm btn-reject" id="btn-cancel-participant-name" style="padding: 0.5rem;" type="button" title="Cancelar">
+                  <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+              </div>
+              <div id="participant-name-display-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <h2 id="participant-details-name-text" class="profile-athlete-name">Participante</h2>
+                <button class="btn-edit-participant-name admin-only" id="btn-edit-participant-name-trigger" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; display: none;" type="button" aria-label="Editar nome">
+                  <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-only" style="display: none;">
+              <button class="btn btn-primary" id="btn-details-add-activity" type="button">
+                <i data-lucide="plus-circle"></i> <span>Lançar Atividade</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Participant Stats Summary Card -->
+          <section class="card" style="margin-bottom: 1.5rem;">
+            <div id="participant-stats-summary" class="profile-stats-grid">
+              <div class="profile-stat-box">
+                <div class="profile-stat-label">
+                  <i data-lucide="activity" style="color: var(--accent-purple);"></i> Treinos
+                </div>
+                <div id="participant-total-activities" class="profile-stat-value">0</div>
+              </div>
+              <div class="profile-stat-box">
+                <div class="profile-stat-label">
+                  <i data-lucide="dumbbell" style="color: var(--accent-emerald);"></i> Flexões
+                </div>
+                <div id="participant-total-pushups" class="profile-stat-value" style="color: var(--accent-emerald);">0</div>
+              </div>
+              <div class="profile-stat-box">
+                <div class="profile-stat-label">
+                  <i data-lucide="footprints" style="color: var(--accent-cyan);"></i> Corrida
+                </div>
+                <div id="participant-total-running" class="profile-stat-value" style="color: var(--accent-cyan);">0 <span class="profile-stat-unit">km</span></div>
+              </div>
+              <div class="profile-stat-box" style="border-right: none;">
+                <div class="profile-stat-label">
+                  <i data-lucide="bike" style="color: var(--accent-amber);"></i> Bike
+                </div>
+                <div id="participant-total-cycling" class="profile-stat-value" style="color: var(--accent-amber);">0 <span class="profile-stat-unit">km</span></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Badges / Achievements Card -->
+          <section class="card" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h3 style="font-family: var(--font-title); font-size: 1.2rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                <i data-lucide="award"></i> Conquistas & Insígnias
+              </h3>
+              <span id="participant-badges-unlocked-count" class="badge-counter-pill">0 desbloqueadas</span>
+            </div>
+            <div id="participant-badges-container" class="badges-wall">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- Activities History Card -->
+          <section class="card">
+            <h3 style="font-family: var(--font-title); font-size: 1.2rem; margin-bottom: 1.25rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="history"></i> Histórico de Atividades
+            </h3>
+            <div id="participant-activities-list" class="profile-activities-feed">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+        </div>
+
       </main>
     </div>
   </div>
@@ -466,88 +555,6 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block">Salvar Participante</button>
       </form>
-    </div>
-  </div>
-
-  <!-- MODAL: Participant Details & History -->
-  <div class="modal-overlay" id="modal-participant-details" role="dialog" aria-modal="true" aria-labelledby="modal-participant-details-title">
-    <div class="modal-content" style="max-width: 620px;">
-      <div class="modal-header" style="justify-content: space-between; align-items: center; width: 100%;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;">
-          <div id="participant-name-edit-container" style="display: none; align-items: center; gap: 0.5rem; width: 100%;">
-            <input type="text" id="edit-participant-name-input" style="font-size: 1.25rem; font-weight: 800; padding: 0.25rem 0.5rem; flex: 1; min-width: 0;" maxlength="20">
-            <button class="btn btn-sm btn-approve" id="btn-save-participant-name" style="padding: 0.4rem; flex-shrink: 0;" type="button">
-              <i data-lucide="check" style="width: 16px; height: 16px;"></i>
-            </button>
-            <button class="btn btn-sm btn-reject" id="btn-cancel-participant-name" style="padding: 0.4rem; flex-shrink: 0;" type="button">
-              <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-            </button>
-          </div>
-          <span id="participant-details-name-text" style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-title); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Participante</span>
-          <button class="btn-edit-participant-name admin-only" id="btn-edit-participant-name-trigger" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; display: none;" type="button" aria-label="Editar nome">
-            <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
-          </button>
-        </div>
-        <button class="close-btn" id="btn-close-participant-details" aria-label="Fechar Modal" style="margin-left: 1rem; flex-shrink: 0;">&times;</button>
-      </div>
-      
-      <!-- Participant Stats Summary -->
-      <div id="participant-stats-summary" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
-        <div style="text-align: center; border-right: 1px solid var(--border-color);">
-          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="activity" style="width: 11px; height: 11px; color: var(--accent-purple);"></i> Treinos
-          </div>
-          <div id="participant-total-activities" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
-        </div>
-        <div style="text-align: center; border-right: 1px solid var(--border-color);">
-          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="dumbbell" style="width: 11px; height: 11px; color: var(--accent-emerald);"></i> Flexões
-          </div>
-          <div id="participant-total-pushups" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
-        </div>
-        <div style="text-align: center; border-right: 1px solid var(--border-color);">
-          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="footprints" style="width: 11px; height: 11px; color: var(--accent-cyan);"></i> Corrida
-          </div>
-          <div id="participant-total-running" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="bike" style="width: 11px; height: 11px; color: var(--accent-amber);"></i> Bike
-          </div>
-          <div id="participant-total-cycling" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
-        </div>
-      </div>
-
-      <!-- Badges / Achievements Section -->
-      <div style="margin-bottom: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h4 style="font-family: var(--font-title); font-size: 1rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.35rem; margin: 0;">
-            <i data-lucide="award" style="width: 16px; height: 16px;"></i> Conquistas & Insígnias
-          </h4>
-          <span id="participant-badges-unlocked-count" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.04); padding: 0.2rem 0.6rem; border-radius: 9999px; border: 1px solid var(--border-color);">0 desbloqueadas</span>
-        </div>
-        <div id="participant-badges-container" class="badges-wall">
-          <!-- Loaded dynamically -->
-        </div>
-      </div>
-      
-      <!-- History Section -->
-      <div style="margin-bottom: 1.5rem;">
-        <h4 style="font-family: var(--font-title); font-size: 1rem; margin-bottom: 0.75rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.35rem;">
-          <i data-lucide="history" style="width: 16px; height: 16px;"></i> Histórico de Atividades
-        </h4>
-        <div id="participant-activities-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
-          <!-- Loaded dynamically -->
-        </div>
-      </div>
-      
-      <!-- Admin Action Section -->
-      <div class="admin-only" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: none;">
-        <button class="btn btn-primary btn-block" id="btn-details-add-activity" type="button">
-          <i data-lucide="plus-circle"></i> Lançar Atividade
-        </button>
-      </div>
     </div>
   </div>
 
