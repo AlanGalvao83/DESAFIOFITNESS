@@ -208,8 +208,9 @@ main {
   background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
 }
 
-/* Banner/Stats Grid */
-.summary-grid {
+/* Banner/Stats Grid & Leaders Grid */
+.summary-grid,
+.leaders-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.15rem;
@@ -1284,12 +1285,6 @@ body.admin-active .admin-banner {
 /* Leaders Board Podium (Prizes Highlight) Styling */
 /* ==================================================== */
 
-.leaders-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.15rem;
-}
-
 .leader-podium-card {
   background: rgba(22, 29, 47, 0.4);
   border: 1px solid var(--border-color);
@@ -1447,6 +1442,24 @@ body.admin-active .admin-banner {
   }
   50% {
     transform: translateY(-4px);
+  }
+}
+
+/* Responsive Podium adjustments */
+@media (max-width: 1180px) and (min-width: 641px) {
+  .leaders-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .leaders-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+  }
+  .leader-podium-card {
+    padding: 0.85rem 1rem;
   }
 }
 
