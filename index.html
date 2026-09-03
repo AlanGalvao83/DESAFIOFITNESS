@@ -36,6 +36,9 @@
         <button class="sidebar-link active" id="link-dashboard" type="button">
           <i data-lucide="layout-dashboard"></i> <span class="link-text">Dashboard</span>
         </button>
+        <button class="sidebar-link" id="link-participants" type="button">
+          <i data-lucide="users"></i> <span class="link-text">Participantes</span>
+        </button>
         <button class="sidebar-link" id="link-race" type="button">
           <i data-lucide="award"></i> <span class="link-text">Corrida Animada</span>
         </button>
@@ -264,6 +267,21 @@
                 </div>
               </section>
 
+              <!-- Recent Achievements / Conquistas Recentes -->
+              <section class="card" id="recent-achievements-card" aria-labelledby="recent-achievements-title">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h2 id="recent-achievements-title" class="section-title" style="margin: 0; color: var(--accent-amber);">
+                    <i data-lucide="award"></i> Conquistas Recentes
+                  </h2>
+                  <button type="button" id="btn-dashboard-view-achievements" style="background: transparent; border: none; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; transition: var(--transition-fast);">
+                    <span>Ver atletas</span> <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+                  </button>
+                </div>
+                <div id="recent-achievements-list" class="recent-achievements-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </section>
+
               <!-- Strava Club Widget -->
               <section class="card" aria-labelledby="strava-title">
                 <h2 id="strava-title" class="section-title"><i data-lucide="footprints" style="color: #fc4c02;"></i> Clube no Strava</h2>
@@ -307,6 +325,29 @@
             <h2 class="section-title"><i data-lucide="trending-up"></i> Histórico de Desempenho (Últimos 7 Dias)</h2>
             <div class="chart-container" style="height: 380px;">
               <canvas id="evolution-chart"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <!-- SECTION 4: PARTICIPANTS & ACHIEVEMENTS -->
+        <div id="section-participants" class="content-section">
+          <section class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 class="section-title" style="margin-bottom: 0.25rem;"><i data-lucide="users"></i> Participantes & Conquistas</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);" id="participants-count-summary">Carregando participantes...</p>
+              </div>
+              
+              <!-- Search bar -->
+              <div style="position: relative; min-width: 260px; max-width: 100%;">
+                <i data-lucide="search" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); pointer-events: none;"></i>
+                <input type="text" id="participants-search-input" placeholder="Buscar participante..." style="width: 100%; padding: 0.55rem 0.85rem 0.55rem 2.4rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+              </div>
+            </div>
+
+            <!-- Participants Cards Grid -->
+            <div class="participants-grid" id="participants-grid">
+              <!-- Dynamically rendered -->
             </div>
           </section>
         </div>
@@ -430,7 +471,7 @@
 
   <!-- MODAL: Participant Details & History -->
   <div class="modal-overlay" id="modal-participant-details" role="dialog" aria-modal="true" aria-labelledby="modal-participant-details-title">
-    <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-content" style="max-width: 620px;">
       <div class="modal-header" style="justify-content: space-between; align-items: center; width: 100%;">
         <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;">
           <div id="participant-name-edit-container" style="display: none; align-items: center; gap: 0.5rem; width: 100%;">
@@ -451,24 +492,43 @@
       </div>
       
       <!-- Participant Stats Summary -->
-      <div id="participant-stats-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+      <div id="participant-stats-summary" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1.25rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
         <div style="text-align: center; border-right: 1px solid var(--border-color);">
-          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="activity" style="width: 12px; height: 12px; color: var(--accent-purple);"></i> Treinos
+          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="activity" style="width: 11px; height: 11px; color: var(--accent-purple);"></i> Treinos
           </div>
-          <div id="participant-total-activities" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
+          <div id="participant-total-activities" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
         </div>
         <div style="text-align: center; border-right: 1px solid var(--border-color);">
-          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="footprints" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i> Corrida
+          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="dumbbell" style="width: 11px; height: 11px; color: var(--accent-emerald);"></i> Flexões
           </div>
-          <div id="participant-total-running" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
+          <div id="participant-total-pushups" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0</div>
+        </div>
+        <div style="text-align: center; border-right: 1px solid var(--border-color);">
+          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="footprints" style="width: 11px; height: 11px; color: var(--accent-cyan);"></i> Corrida
+          </div>
+          <div id="participant-total-running" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
         </div>
         <div style="text-align: center;">
-          <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
-            <i data-lucide="bike" style="width: 12px; height: 12px; color: var(--accent-amber);"></i> Bike
+          <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+            <i data-lucide="bike" style="width: 11px; height: 11px; color: var(--accent-amber);"></i> Bike
           </div>
-          <div id="participant-total-cycling" style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
+          <div id="participant-total-cycling" style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-title); margin-top: 0.25rem; color: var(--text-primary);">0 <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span></div>
+        </div>
+      </div>
+
+      <!-- Badges / Achievements Section -->
+      <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-family: var(--font-title); font-size: 1rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.35rem; margin: 0;">
+            <i data-lucide="award" style="width: 16px; height: 16px;"></i> Conquistas & Insígnias
+          </h4>
+          <span id="participant-badges-unlocked-count" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.04); padding: 0.2rem 0.6rem; border-radius: 9999px; border: 1px solid var(--border-color);">0 desbloqueadas</span>
+        </div>
+        <div id="participant-badges-container" class="badges-wall">
+          <!-- Loaded dynamically -->
         </div>
       </div>
       

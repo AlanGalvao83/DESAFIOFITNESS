@@ -27,7 +27,8 @@ const state = {
   raceCurrentIndex: 0,
   raceDates: [],
   raceDataByDate: {},
-  participantColors: {}
+  participantColors: {},
+  participantsSearchTerm: ''
 };
 
 // ----------------------------------------------------
@@ -99,15 +100,12 @@ const el = {
   btnCloseLog: () => document.getElementById('btn-close-log'),
   formLog: () => document.getElementById('form-log-activity'),
   logParticipantSelect: () => document.getElementById('log-participant'),
+  logValidatorSelect: () => document.getElementById('log-validator'),
   logDateInput: () => document.getElementById('log-date'),
   logTypeSelect: () => document.getElementById('log-type'),
   logPushupFields: () => document.getElementById('log-pushup-fields'),
   logRunningFields: () => document.getElementById('log-running-fields'),
-  logValidatorSelect: () => document.getElementById('log-validator'),
   
-  toastContainer: () => document.getElementById('toast-container'),
-
-  // Participant Details Modal elements
   modalParticipantDetails: () => document.getElementById('modal-participant-details'),
   btnCloseParticipantDetails: () => document.getElementById('btn-close-participant-details'),
   participantDetailsNameText: () => document.getElementById('participant-details-name-text'),
@@ -116,11 +114,18 @@ const el = {
   editParticipantNameInput: () => document.getElementById('edit-participant-name-input'),
   btnSaveParticipantName: () => document.getElementById('btn-save-participant-name'),
   btnCancelParticipantName: () => document.getElementById('btn-cancel-participant-name'),
-  participantActivitiesList: () => document.getElementById('participant-activities-list'),
-  btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity'),
   participantTotalActivities: () => document.getElementById('participant-total-activities'),
+  participantTotalPushups: () => document.getElementById('participant-total-pushups'),
   participantTotalRunning: () => document.getElementById('participant-total-running'),
   participantTotalCycling: () => document.getElementById('participant-total-cycling'),
+  participantActivitiesList: () => document.getElementById('participant-activities-list'),
+  btnDetailsAddActivity: () => document.getElementById('btn-details-add-activity'),
+  participantBadgesContainer: () => document.getElementById('participant-badges-container'),
+  participantBadgesUnlockedCount: () => document.getElementById('participant-badges-unlocked-count'),
+  
+  toastContainer: () => document.getElementById('toast-container'),
+  
+  // Bar Chart Race elements
   btnPlayRace: () => document.getElementById('btn-play-race'),
   btnResetRace: () => document.getElementById('btn-reset-race'),
   raceCurrentDate: () => document.getElementById('race-current-date'),
@@ -128,13 +133,49 @@ const el = {
   
   // Sidebar elements
   linkDashboard: () => document.getElementById('link-dashboard'),
+  linkParticipants: () => document.getElementById('link-participants'),
   linkRace: () => document.getElementById('link-race'),
   linkHistory: () => document.getElementById('link-history'),
   sectionDashboard: () => document.getElementById('section-dashboard'),
+  sectionParticipants: () => document.getElementById('section-participants'),
   sectionRace: () => document.getElementById('section-race'),
   sectionHistory: () => document.getElementById('section-history'),
   btnToggleSidebar: () => document.getElementById('btn-toggle-sidebar'),
-  sidebar: () => document.querySelector('.sidebar')
+  sidebar: () => document.querySelector('.sidebar'),
+
+  // Participants section
+  participantsGrid: () => document.getElementById('participants-grid'),
+  participantsSearchInput: () => document.getElementById('participants-search-input'),
+  participantsCountSummary: () => document.getElementById('participants-count-summary'),
+
+  // Dashboard Recent Achievements
+  recentAchievementsCard: () => document.getElementById('recent-achievements-card'),
+  recentAchievementsList: () => document.getElementById('recent-achievements-list'),
+  btnDashboardViewAchievements: () => document.getElementById('btn-dashboard-view-achievements')
+};
+
+// ----------------------------------------------------
+// Badge / Achievement Definitions
+// ----------------------------------------------------
+const BADGE_DEFINITIONS = {
+  pushups: [
+    { id: 'pushup_100', name: '100 Flexões', desc: 'Acumule 100 flexões', threshold: 100, image: 'imagens/FLEXÕES/100.png' },
+    { id: 'pushup_250', name: '250 Flexões', desc: 'Acumule 250 flexões', threshold: 250, image: 'imagens/FLEXÕES/250.png' },
+    { id: 'pushup_500', name: '500 Flexões', desc: 'Acumule 500 flexões', threshold: 500, image: 'imagens/FLEXÕES/500.png' },
+    { id: 'pushup_750', name: '750 Flexões', desc: 'Acumule 750 flexões', threshold: 750, image: 'imagens/FLEXÕES/750.png' },
+    { id: 'pushup_1000', name: '1.000 Flexões', desc: 'Acumule 1.000 flexões', threshold: 1000, image: 'imagens/FLEXÕES/1000.png' },
+    { id: 'pushup_1500', name: '1.500 Flexões', desc: 'Acumule 1.500 flexões', threshold: 1500, image: 'imagens/FLEXÕES/1500.png' },
+    { id: 'pushup_2000', name: '2.000 Flexões', desc: 'Acumule 2.000 flexões', threshold: 2000, image: 'imagens/FLEXÕES/2000.png' },
+    { id: 'pushup_5000', name: '5.000 Flexões', desc: 'Acumule 5.000 flexões', threshold: 5000, image: 'imagens/FLEXÕES/5000.png' }
+  ],
+  dailyAndCombos: [
+    { id: 'daily_max_pushups', name: 'Mais Flexões do Dia', desc: 'Líder diário de flexões no desafio', image: 'imagens/DIARIOS/mais flexao.png' },
+    { id: 'daily_min_pushups', name: 'Menos Flexões do Dia', desc: 'Menor marca diária positiva (> 0)', image: 'imagens/DIARIOS/menos flexao.png' },
+    { id: 'combo_pushup_bike', name: 'Flexão & Bike', desc: 'Flexão e bike no mesmo dia', image: 'imagens/DIARIOS/flexão e bike.png' },
+    { id: 'combo_pushup_run', name: 'Flexão & Corrida', desc: 'Flexão e corrida no mesmo dia', image: 'imagens/DIARIOS/flexão e corrida.png' },
+    { id: 'combo_run_bike', name: 'Corrida & Bike', desc: 'Corrida e bike no mesmo dia', image: 'imagens/DIARIOS/corrida e bike.png' },
+    { id: 'combo_triatlo', name: 'Super Combo', desc: 'Flexão, corrida e bike no mesmo dia', image: 'imagens/DIARIOS/flexao, bike e corrida.png' }
+  ]
 };
 
 // ----------------------------------------------------
@@ -336,11 +377,21 @@ async function refreshData(forceReloadChallenges = false) {
     // 7. Render dynamic lists & charts
     renderLeaderboard();
     renderRecentActivities();
-    await initRaceControls(currentChallenge);
+    renderRecentAchievements();
     if (state.activeSection === 'race') {
+      await initRaceControls(currentChallenge);
       renderCharts(currentChallenge);
     } else if (state.activeSection === 'history') {
       renderEvolutionChart(currentChallenge);
+    } else if (state.activeSection === 'participants') {
+      renderParticipantsSection();
+    }
+    
+    // If participant details modal is open, refresh their badges & activities
+    if (state.selectedParticipantId && el.modalParticipantDetails() && el.modalParticipantDetails().classList.contains('active')) {
+      const pActivities = await db.getParticipantActivities(state.selectedParticipantId, state.selectedChallengeId);
+      state.selectedParticipantActivities = pActivities;
+      renderParticipantActivities();
     }
     
     // Update admin challenge management modal values
@@ -629,6 +680,21 @@ function renderLeaderboard() {
       }
     }
     
+    // Badges between name and score
+    const ach = calculateParticipantAchievements(item.id, state.challengeActivities);
+    let badgesHTML = '';
+    if (ach && ach.unlockedBadges && ach.unlockedBadges.length > 0) {
+      badgesHTML = `
+        <div class="rank-badges">
+          ${ach.unlockedBadges.map(b => `
+            <img class="rank-badge-item" src="${encodeURI(b.image)}" alt="${b.name}" title="${b.name}: ${b.desc} (${b.progressText})">
+          `).join('')}
+        </div>
+      `;
+    } else {
+      badgesHTML = `<div class="rank-badges"></div>`;
+    }
+
     const rankEl = document.createElement('div');
     rankEl.className = 'leaderboard-item';
     rankEl.innerHTML = `
@@ -637,6 +703,7 @@ function renderLeaderboard() {
         <div>${item.name}</div>
         ${subtext}
       </div>
+      ${badgesHTML}
       <div class="rank-score">
         ${state.activeTab === 'pushup' ? value.toLocaleString('pt-BR') : value.toFixed(1).toLocaleString('pt-BR')}
         <span class="rank-unit">${unit}</span>
@@ -649,6 +716,350 @@ function renderLeaderboard() {
     
     listContainer.appendChild(rankEl);
   });
+}
+
+// ----------------------------------------------------
+// Achievements / Badges Engine
+// ----------------------------------------------------
+function escapeHtml(text) {
+  if (!text) return '';
+  return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+
+function calculateParticipantAchievements(participantId, activities = []) {
+  const pActivities = activities.filter(a => a.participant_id === participantId && a.status === 'approved');
+  
+  // 1. Total por modalidade do participante
+  let totalPushups = 0;
+  let totalRunning = 0;
+  let totalCycling = 0;
+  pActivities.forEach(a => {
+    const val = parseFloat(a.amount) || 0;
+    if (a.type === 'pushup') totalPushups += val;
+    else if (a.type === 'running') totalRunning += val;
+    else if (a.type === 'cycling') totalCycling += val;
+  });
+
+  // 2. Mapa diário de todos os participantes no desafio
+  const dailyPushupsMap = {}; // date -> { [pid]: amount }
+  const pDailyTypes = {}; // date -> Set of types
+
+  activities.forEach(a => {
+    if (a.status !== 'approved') return;
+    const d = a.date;
+    if (!dailyPushupsMap[d]) dailyPushupsMap[d] = {};
+    if (!dailyPushupsMap[d][a.participant_id]) dailyPushupsMap[d][a.participant_id] = 0;
+    
+    if (a.type === 'pushup') {
+      dailyPushupsMap[d][a.participant_id] += (parseFloat(a.amount) || 0);
+    }
+    
+    if (a.participant_id === participantId) {
+      if (!pDailyTypes[d]) pDailyTypes[d] = new Set();
+      pDailyTypes[d].add(a.type);
+    }
+  });
+
+  // 3. Contagem de superlativo do dia (mais / menos flexões)
+  let maxPushupsDaysCount = 0;
+  let minPushupsDaysCount = 0;
+
+  Object.keys(dailyPushupsMap).forEach(d => {
+    const dayData = dailyPushupsMap[d];
+    const participantsWithPushups = Object.entries(dayData).filter(([_, amount]) => amount > 0);
+    if (participantsWithPushups.length === 0) return;
+
+    // Maior flexão do dia (> 0)
+    let maxVal = 0;
+    participantsWithPushups.forEach(([_, amount]) => {
+      if (amount > maxVal) maxVal = amount;
+    });
+    if (dayData[participantId] && dayData[participantId] === maxVal && maxVal > 0) {
+      maxPushupsDaysCount++;
+    }
+
+    // Menos flexões do dia (diferente de 0)
+    if (participantsWithPushups.length >= 2) {
+      let minVal = Infinity;
+      participantsWithPushups.forEach(([_, amount]) => {
+        if (amount < minVal) minVal = amount;
+      });
+      if (dayData[participantId] && dayData[participantId] === minVal && minVal > 0) {
+        minPushupsDaysCount++;
+      }
+    }
+  });
+
+  // 4. Combos diários do participante
+  let pushupBikeCount = 0;
+  let pushupRunCount = 0;
+  let runBikeCount = 0;
+  let triathlonCount = 0;
+
+  Object.values(pDailyTypes).forEach(typeSet => {
+    const hasPushup = typeSet.has('pushup');
+    const hasRunning = typeSet.has('running');
+    const hasCycling = typeSet.has('cycling');
+
+    if (hasPushup && hasCycling) pushupBikeCount++;
+    if (hasPushup && hasRunning) pushupRunCount++;
+    if (hasRunning && hasCycling) runBikeCount++;
+    if (hasPushup && hasRunning && hasCycling) triathlonCount++;
+  });
+
+  // 5. Badges de Marcos de Flexão
+  const pushupBadges = BADGE_DEFINITIONS.pushups.map(b => {
+    const isUnlocked = totalPushups >= b.threshold;
+    return {
+      id: b.id,
+      name: b.name,
+      desc: b.desc,
+      image: b.image,
+      category: 'flexao',
+      unlocked: isUnlocked,
+      count: isUnlocked ? 1 : 0,
+      current: totalPushups,
+      threshold: b.threshold,
+      progressText: isUnlocked ? 'Alcançado!' : `${totalPushups.toLocaleString('pt-BR')} / ${b.threshold.toLocaleString('pt-BR')}`
+    };
+  });
+
+  // 6. Badges Diárias e Combos
+  const dailyBadges = [
+    {
+      id: 'daily_max_pushups',
+      name: 'Mais Flexões do Dia',
+      desc: 'Líder de flexões em um dia',
+      image: 'imagens/DIARIOS/mais flexao.png',
+      category: 'diario',
+      unlocked: maxPushupsDaysCount > 0,
+      count: maxPushupsDaysCount,
+      progressText: maxPushupsDaysCount > 0 ? `${maxPushupsDaysCount}x no desafio` : 'Não conquistado'
+    },
+    {
+      id: 'daily_min_pushups',
+      name: 'Menos Flexões do Dia',
+      desc: 'Menor marca diária (> 0)',
+      image: 'imagens/DIARIOS/menos flexao.png',
+      category: 'diario',
+      unlocked: minPushupsDaysCount > 0,
+      count: minPushupsDaysCount,
+      progressText: minPushupsDaysCount > 0 ? `${minPushupsDaysCount}x no desafio` : 'Não conquistado'
+    },
+    {
+      id: 'combo_pushup_bike',
+      name: 'Flexão & Bike',
+      desc: 'Flexão e bike no mesmo dia',
+      image: 'imagens/DIARIOS/flexão e bike.png',
+      category: 'combo',
+      unlocked: pushupBikeCount > 0,
+      count: pushupBikeCount,
+      progressText: pushupBikeCount > 0 ? `${pushupBikeCount}x realizado` : 'Não conquistado'
+    },
+    {
+      id: 'combo_pushup_run',
+      name: 'Flexão & Corrida',
+      desc: 'Flexão e corrida no mesmo dia',
+      image: 'imagens/DIARIOS/flexão e corrida.png',
+      category: 'combo',
+      unlocked: pushupRunCount > 0,
+      count: pushupRunCount,
+      progressText: pushupRunCount > 0 ? `${pushupRunCount}x realizado` : 'Não conquistado'
+    },
+    {
+      id: 'combo_run_bike',
+      name: 'Corrida & Bike',
+      desc: 'Corrida e bike no mesmo dia',
+      image: 'imagens/DIARIOS/corrida e bike.png',
+      category: 'combo',
+      unlocked: runBikeCount > 0,
+      count: runBikeCount,
+      progressText: runBikeCount > 0 ? `${runBikeCount}x realizado` : 'Não conquistado'
+    },
+    {
+      id: 'combo_triatlo',
+      name: 'Super Combo',
+      desc: 'Flexão, corrida e bike no mesmo dia',
+      image: 'imagens/DIARIOS/flexao, bike e corrida.png',
+      category: 'combo',
+      unlocked: triathlonCount > 0,
+      count: triathlonCount,
+      progressText: triathlonCount > 0 ? `${triathlonCount}x realizado` : 'Não conquistado'
+    }
+  ];
+
+  const allBadges = [...pushupBadges, ...dailyBadges];
+  const unlockedBadges = allBadges.filter(b => b.unlocked);
+
+  return {
+    totalPushups,
+    totalRunning,
+    totalCycling,
+    totalActivities: pActivities.length,
+    allBadges,
+    unlockedBadges,
+    unlockedCount: unlockedBadges.length,
+    totalBadgesCount: allBadges.length
+  };
+}
+
+// Render badges wall in modal
+function renderParticipantBadges(participantId) {
+  const container = el.participantBadgesContainer();
+  if (!container) return;
+  container.innerHTML = '';
+
+  const ach = calculateParticipantAchievements(participantId, state.challengeActivities);
+
+  if (el.participantBadgesUnlockedCount()) {
+    el.participantBadgesUnlockedCount().textContent = `${ach.unlockedCount} de ${ach.totalBadgesCount} desbloqueadas`;
+  }
+
+  ach.allBadges.forEach(b => {
+    const badgeEl = document.createElement('div');
+    badgeEl.className = `badge-item ${b.unlocked ? 'unlocked' : 'locked'}`;
+
+    const repeatBadge = (b.count > 1) 
+      ? `<span class="badge-repeat-counter" title="Conquistado ${b.count} vezes">x${b.count}</span>` 
+      : '';
+
+    badgeEl.innerHTML = `
+      <div class="badge-img-wrapper">
+        <img class="badge-img" src="${encodeURI(b.image)}" alt="${b.name}">
+        ${repeatBadge}
+      </div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+      <div class="badge-status-tag ${b.unlocked ? 'unlocked' : 'locked'}">
+        ${b.unlocked ? (b.count > 1 ? `${b.count}x Conquistado` : 'Conquistado') : b.progressText}
+      </div>
+    `;
+
+    container.appendChild(badgeEl);
+  });
+}
+
+// Render Participants Section (cards grid & filter)
+function renderParticipantsSection() {
+  const container = el.participantsGrid();
+  if (!container) return;
+  container.innerHTML = '';
+
+  const challenge = state.challenges.find(c => c.id === state.selectedChallengeId);
+  if (!challenge || state.participants.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <i data-lucide="users"></i>
+        <p>Nenhum participante cadastrado ou desafio selecionado.</p>
+      </div>
+    `;
+    lucide.createIcons();
+    if (el.participantsCountSummary()) {
+      el.participantsCountSummary().textContent = '0 participantes cadastrados';
+    }
+    return;
+  }
+
+  let list = [...state.participants];
+  if (state.participantsSearchTerm) {
+    list = list.filter(p => p.name.toLowerCase().includes(state.participantsSearchTerm));
+  }
+
+  if (el.participantsCountSummary()) {
+    const totalCount = state.participants.length;
+    const filterText = state.participantsSearchTerm ? ` (filtrando ${list.length} de ${totalCount})` : '';
+    el.participantsCountSummary().textContent = `${totalCount} atleta${totalCount > 1 ? 's' : ''} participando${filterText}`;
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; padding: 2.5rem;">
+        <i data-lucide="search-x"></i>
+        <p>Nenhum participante encontrado com o termo "<strong>${escapeHtml(state.participantsSearchTerm)}</strong>".</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  // Calcular dados de cada participante
+  const participantsWithBadges = list.map(p => {
+    const ach = calculateParticipantAchievements(p.id, state.challengeActivities);
+    return { participant: p, ach };
+  });
+
+  // Ordenar por quantidade de conquistas desbloqueadas (decrescente), depois por flexões
+  participantsWithBadges.sort((a, b) => {
+    if (b.ach.unlockedCount !== a.ach.unlockedCount) {
+      return b.ach.unlockedCount - a.ach.unlockedCount;
+    }
+    return b.ach.totalPushups - a.ach.totalPushups;
+  });
+
+  participantsWithBadges.forEach(({ participant, ach }) => {
+    const card = document.createElement('div');
+    card.className = 'participant-card';
+    card.setAttribute('data-id', participant.id);
+
+    let miniBadgesHTML = '';
+    if (ach.unlockedBadges.length > 0) {
+      miniBadgesHTML = ach.unlockedBadges.map(b => `
+        <img class="mini-badge-icon" src="${encodeURI(b.image)}" alt="${b.name}" title="${b.name}: ${b.desc} (${b.progressText})">
+      `).join('');
+    } else {
+      miniBadgesHTML = '<span class="mini-badges-empty">Nenhuma conquista ainda</span>';
+    }
+
+    const initial = participant.name ? participant.name.trim().charAt(0).toUpperCase() : '?';
+
+    card.innerHTML = `
+      <div class="participant-card-header">
+        <div class="participant-card-avatar">${initial}</div>
+        <div class="participant-card-info">
+          <div class="participant-card-name" title="${participant.name}">${participant.name}</div>
+          <div class="participant-badges-badge">
+            <i data-lucide="award" style="width: 12px; height: 12px;"></i>
+            <span>${ach.unlockedCount} ${ach.unlockedCount === 1 ? 'conquista' : 'conquistas'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="participant-card-stats">
+        <div class="p-stat-item">
+          <span class="p-stat-label">Treinos</span>
+          <span class="p-stat-val">${ach.totalActivities}</span>
+        </div>
+        <div class="p-stat-item">
+          <span class="p-stat-label">Flexões</span>
+          <span class="p-stat-val" style="color: var(--accent-emerald);">${ach.totalPushups.toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="p-stat-item">
+          <span class="p-stat-label">Corrida</span>
+          <span class="p-stat-val" style="color: var(--accent-cyan);">${ach.totalRunning.toFixed(1)} <small style="font-size: 0.65rem;">km</small></span>
+        </div>
+        <div class="p-stat-item">
+          <span class="p-stat-label">Bike</span>
+          <span class="p-stat-val" style="color: var(--accent-amber);">${ach.totalCycling.toFixed(1)} <small style="font-size: 0.65rem;">km</small></span>
+        </div>
+      </div>
+
+      <div class="participant-card-badges-row">
+        ${miniBadgesHTML}
+      </div>
+
+      <button class="btn btn-sm btn-block" style="background: rgba(255, 255, 255, 0.04); border-color: var(--border-color); color: var(--text-secondary); margin-top: auto; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" type="button">
+        <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Ver Perfil & Histórico
+      </button>
+    `;
+
+    card.addEventListener('click', () => {
+      openParticipantDetails(participant.id);
+    });
+
+    container.appendChild(card);
+  });
+
+  lucide.createIcons();
 }
 
 // ----------------------------------------------------
@@ -703,21 +1114,30 @@ function renderParticipantActivities() {
   
   // Calculate participant statistics
   const totalActivities = list.length;
+  let totalPushups = 0;
   let totalRunning = 0;
   let totalCycling = 0;
   
   list.forEach(act => {
-    if (act.type === 'running') {
-      totalRunning += act.amount;
+    if (act.type === 'pushup') {
+      totalPushups += parseFloat(act.amount);
+    } else if (act.type === 'running') {
+      totalRunning += parseFloat(act.amount);
     } else if (act.type === 'cycling') {
-      totalCycling += act.amount;
+      totalCycling += parseFloat(act.amount);
     }
   });
   
   // Render stats summary in modal
   el.participantTotalActivities().textContent = totalActivities;
-  el.participantTotalRunning().innerHTML = `${totalRunning.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
-  el.participantTotalCycling().innerHTML = `${totalCycling.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
+  if (el.participantTotalPushups()) {
+    el.participantTotalPushups().textContent = totalPushups.toLocaleString('pt-BR');
+  }
+  el.participantTotalRunning().innerHTML = `${totalRunning.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
+  el.participantTotalCycling().innerHTML = `${totalCycling.toFixed(1).toLocaleString('pt-BR')} <span style="font-size: 0.65rem; font-weight: 500; color: var(--text-secondary);">km</span>`;
+  
+  // Render Badges in modal
+  renderParticipantBadges(state.selectedParticipantId);
   
   if (list.length === 0) {
     container.innerHTML = `
@@ -930,16 +1350,222 @@ function renderRecentActivities() {
   });
 }
 
-// Render dynamic charts
+// Render Recent Achievements in Dashboard
+function renderRecentAchievements() {
+  const container = el.recentAchievementsList();
+  if (!container) return;
+  container.innerHTML = '';
+
+  const activities = state.challengeActivities || [];
+  if (activities.length === 0 || state.participants.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">
+        <p>Nenhuma conquista registrada ainda.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const pMap = {};
+  state.participants.forEach(p => { pMap[p.id] = p.name; });
+
+  const recentList = [];
+
+  // 1. Calcular marcos de flexão alcançados com data
+  state.participants.forEach(p => {
+    const pPushupActs = activities
+      .filter(a => a.participant_id === p.id && a.type === 'pushup' && a.status === 'approved')
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let cum = 0;
+    const reachedThresholds = new Set();
+
+    pPushupActs.forEach(act => {
+      cum += (parseFloat(act.amount) || 0);
+      BADGE_DEFINITIONS.pushups.forEach(b => {
+        if (cum >= b.threshold && !reachedThresholds.has(b.threshold)) {
+          reachedThresholds.add(b.threshold);
+          recentList.push({
+            participantId: p.id,
+            participantName: p.name,
+            badge: b,
+            date: act.date,
+            timestamp: act.created_at || act.date,
+            subtitle: `Alcançou a marca de ${b.threshold.toLocaleString('pt-BR')} flexões!`
+          });
+        }
+      });
+    });
+  });
+
+  // 2. Calcular conquistas diárias e combos por dia
+  const dailyMap = {};
+  activities.forEach(a => {
+    if (a.status !== 'approved') return;
+    const d = a.date;
+    if (!dailyMap[d]) dailyMap[d] = { pushups: {}, types: {}, timestamps: {} };
+    
+    if (!dailyMap[d].pushups[a.participant_id]) dailyMap[d].pushups[a.participant_id] = 0;
+    if (a.type === 'pushup') {
+      dailyMap[d].pushups[a.participant_id] += (parseFloat(a.amount) || 0);
+    }
+
+    if (!dailyMap[d].types[a.participant_id]) dailyMap[d].types[a.participant_id] = new Set();
+    dailyMap[d].types[a.participant_id].add(a.type);
+
+    dailyMap[d].timestamps[a.participant_id] = a.created_at || a.date;
+  });
+
+  const dailyBadgesDef = {};
+  BADGE_DEFINITIONS.dailyAndCombos.forEach(b => { dailyBadgesDef[b.id] = b; });
+
+  Object.keys(dailyMap).forEach(d => {
+    const day = dailyMap[d];
+    const pushupEntries = Object.entries(day.pushups).filter(([_, val]) => val > 0);
+
+    // Mais flexões do dia
+    if (pushupEntries.length > 0) {
+      let maxVal = 0;
+      pushupEntries.forEach(([_, val]) => { if (val > maxVal) maxVal = val; });
+      pushupEntries.forEach(([pid, val]) => {
+        if (val === maxVal && maxVal > 0 && pMap[pid]) {
+          recentList.push({
+            participantId: pid,
+            participantName: pMap[pid],
+            badge: dailyBadgesDef['daily_max_pushups'],
+            date: d,
+            timestamp: day.timestamps[pid] || d,
+            subtitle: `Maior marca do dia (${maxVal} flexões)`
+          });
+        }
+      });
+
+      // Menos flexões do dia
+      if (pushupEntries.length >= 2) {
+        let minVal = Infinity;
+        pushupEntries.forEach(([_, val]) => { if (val < minVal) minVal = val; });
+        pushupEntries.forEach(([pid, val]) => {
+          if (val === minVal && minVal > 0 && pMap[pid]) {
+            recentList.push({
+              participantId: pid,
+              participantName: pMap[pid],
+              badge: dailyBadgesDef['daily_min_pushups'],
+              date: d,
+              timestamp: day.timestamps[pid] || d,
+              subtitle: `Menor marca positiva do dia (${minVal} flexões)`
+            });
+          }
+        });
+      }
+    }
+
+    // Combos do dia
+    Object.entries(day.types).forEach(([pid, typeSet]) => {
+      if (!pMap[pid]) return;
+      const hasPushup = typeSet.has('pushup');
+      const hasRunning = typeSet.has('running');
+      const hasCycling = typeSet.has('cycling');
+      const ts = day.timestamps[pid] || d;
+
+      if (hasPushup && hasCycling) {
+        recentList.push({
+          participantId: pid,
+          participantName: pMap[pid],
+          badge: dailyBadgesDef['combo_pushup_bike'],
+          date: d,
+          timestamp: ts,
+          subtitle: `Treinou flexão e bike no mesmo dia`
+        });
+      }
+      if (hasPushup && hasRunning) {
+        recentList.push({
+          participantId: pid,
+          participantName: pMap[pid],
+          badge: dailyBadgesDef['combo_pushup_run'],
+          date: d,
+          timestamp: ts,
+          subtitle: `Treinou flexão e corrida no mesmo dia`
+        });
+      }
+      if (hasRunning && hasCycling) {
+        recentList.push({
+          participantId: pid,
+          participantName: pMap[pid],
+          badge: dailyBadgesDef['combo_run_bike'],
+          date: d,
+          timestamp: ts,
+          subtitle: `Correu e pedalou no mesmo dia`
+        });
+      }
+      if (hasPushup && hasRunning && hasCycling) {
+        recentList.push({
+          participantId: pid,
+          participantName: pMap[pid],
+          badge: dailyBadgesDef['combo_triatlo'],
+          date: d,
+          timestamp: ts,
+          subtitle: `Super combo: flexão, corrida e bike!`
+        });
+      }
+    });
+  });
+
+  if (recentList.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">
+        <p>Nenhuma conquista registrada ainda.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Ordenar por data/timestamp mais recente
+  recentList.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+
+  // Limitar às 5 mais recentes para caber harmoniosamente no espaço
+  const displayed = recentList.slice(0, 5);
+
+  displayed.forEach(item => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'recent-achievement-item';
+    itemEl.innerHTML = `
+      <img class="recent-achievement-img" src="${encodeURI(item.badge.image)}" alt="${item.badge.name}">
+      <div class="recent-achievement-content">
+        <div class="recent-achievement-athlete">${item.participantName}</div>
+        <div class="recent-achievement-badge-title">
+          <i data-lucide="award" style="width: 13px; height: 13px;"></i> ${item.badge.name}
+        </div>
+        <div class="recent-achievement-meta">
+          <i data-lucide="calendar" style="width: 12px; height: 12px;"></i> ${formatDate(item.date)} • ${item.subtitle}
+        </div>
+      </div>
+      <div class="recent-achievement-arrow">
+        <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+      </div>
+    `;
+
+    itemEl.addEventListener('click', () => {
+      openParticipantDetails(item.participantId);
+    });
+
+    container.appendChild(itemEl);
+  });
+
+  lucide.createIcons();
+}
+
+// Switch active section in SPA
 function switchSection(sectionId) {
   pauseRace();
   state.activeSection = sectionId;
   
   el.linkDashboard().classList.toggle('active', sectionId === 'dashboard');
+  if (el.linkParticipants()) el.linkParticipants().classList.toggle('active', sectionId === 'participants');
   el.linkRace().classList.toggle('active', sectionId === 'race');
   el.linkHistory().classList.toggle('active', sectionId === 'history');
   
   el.sectionDashboard().classList.toggle('active', sectionId === 'dashboard');
+  if (el.sectionParticipants()) el.sectionParticipants().classList.toggle('active', sectionId === 'participants');
   el.sectionRace().classList.toggle('active', sectionId === 'race');
   el.sectionHistory().classList.toggle('active', sectionId === 'history');
   
@@ -949,6 +1575,8 @@ function switchSection(sectionId) {
       initRaceControls(currentChallenge).then(() => renderCharts(currentChallenge));
     } else if (sectionId === 'history') {
       renderEvolutionChart(currentChallenge);
+    } else if (sectionId === 'participants') {
+      renderParticipantsSection();
     }
   }
   lucide.createIcons();
@@ -1366,8 +1994,18 @@ function initEvents() {
 
   // Sidebar Navigation Links
   el.linkDashboard().addEventListener('click', () => switchSection('dashboard'));
+  if (el.linkParticipants()) el.linkParticipants().addEventListener('click', () => switchSection('participants'));
   el.linkRace().addEventListener('click', () => switchSection('race'));
   el.linkHistory().addEventListener('click', () => switchSection('history'));
+
+  // Participants Search Filter
+  el.participantsSearchInput()?.addEventListener('input', (e) => {
+    state.participantsSearchTerm = e.target.value.toLowerCase().trim();
+    renderParticipantsSection();
+  });
+
+  // Dashboard Recent Achievements button (redirect to participants)
+  el.btnDashboardViewAchievements()?.addEventListener('click', () => switchSection('participants'));
 
   // Toggle Sidebar Collapse
   el.btnToggleSidebar().addEventListener('click', () => {
