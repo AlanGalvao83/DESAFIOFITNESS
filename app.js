@@ -152,7 +152,14 @@ const el = {
   // Dashboard Recent Achievements
   recentAchievementsCard: () => document.getElementById('recent-achievements-card'),
   recentAchievementsList: () => document.getElementById('recent-achievements-list'),
-  btnDashboardViewAchievements: () => document.getElementById('btn-dashboard-view-achievements')
+  btnDashboardViewAchievements: () => document.getElementById('btn-dashboard-view-achievements'),
+
+  // Mobile Header Profile Elements
+  mainTopBar: () => document.getElementById('main-top-bar'),
+  mobileHeaderDefault: () => document.getElementById('mobile-header-default'),
+  mobileHeaderProfile: () => document.getElementById('mobile-header-profile'),
+  btnBackFromProfileMobile: () => document.getElementById('btn-back-from-profile-mobile'),
+  mobileParticipantNameText: () => document.getElementById('mobile-participant-name-text')
 };
 
 // ----------------------------------------------------
@@ -1076,6 +1083,9 @@ async function openParticipantDetails(participantId) {
   
   // Set participant name text and initialize input
   el.participantDetailsNameText().textContent = participant.name;
+  if (el.mobileParticipantNameText()) {
+    el.mobileParticipantNameText().textContent = participant.name;
+  }
   el.editParticipantNameInput().value = participant.name;
   
   // Hide edit container and show text container
@@ -1582,6 +1592,20 @@ function switchSection(sectionId) {
   if (el.sectionParticipantProfile()) el.sectionParticipantProfile().classList.toggle('active', sectionId === 'participant-profile');
   el.sectionRace().classList.toggle('active', sectionId === 'race');
   el.sectionHistory().classList.toggle('active', sectionId === 'history');
+
+  // Control top header and mobile header profile visibility
+  if (el.mainTopBar()) {
+    el.mainTopBar().style.display = (sectionId === 'participant-profile') ? 'none' : 'flex';
+  }
+  if (el.mobileHeaderDefault() && el.mobileHeaderProfile()) {
+    if (sectionId === 'participant-profile') {
+      el.mobileHeaderDefault().style.display = 'none';
+      el.mobileHeaderProfile().style.display = 'flex';
+    } else {
+      el.mobileHeaderDefault().style.display = 'flex';
+      el.mobileHeaderProfile().style.display = 'none';
+    }
+  }
   
   const currentChallenge = state.challenges.find(c => c.id === state.selectedChallengeId);
   if (currentChallenge) {
@@ -2206,8 +2230,12 @@ function initEvents() {
     toggleModal(el.modalCreateParticipant(), false);
   });
 
-  // Participant Profile Back Button
+  // Participant Profile Back Button (Desktop & Mobile)
   el.btnBackFromProfile()?.addEventListener('click', () => {
+    switchSection(state.previousSection || 'dashboard');
+  });
+
+  el.btnBackFromProfileMobile()?.addEventListener('click', () => {
     switchSection(state.previousSection || 'dashboard');
   });
   

@@ -61,11 +61,20 @@
       
       <!-- Mobile Top Header -->
       <header class="mobile-header">
-        <div class="nav-container">
+        <div class="nav-container" id="mobile-header-default">
           <a href="#" class="logo">
             <i data-lucide="dumbbell"></i>
             <span>WORKFIT</span>
           </a>
+        </div>
+        <div class="mobile-header-profile" id="mobile-header-profile" style="display: none;">
+          <button class="btn btn-sm btn-outline" id="btn-back-from-profile-mobile" type="button" aria-label="Voltar">
+            <i data-lucide="arrow-left"></i> <span>Voltar</span>
+          </button>
+          <div class="mobile-header-profile-athlete">
+            <i data-lucide="dumbbell"></i>
+            <span id="mobile-participant-name-text">Participante</span>
+          </div>
         </div>
       </header>
 
@@ -73,7 +82,7 @@
       <main>
         
         <!-- Top Title and Challenge Selector -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div id="main-top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;">
           <div style="display: flex; flex-direction: column; gap: 0.25rem;">
             <h1 style="font-family: var(--font-title); font-size: 1.8rem; font-weight: 800; margin: 0;">Painel de Performance</h1>
             <div id="challenge-dates-countdown" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
