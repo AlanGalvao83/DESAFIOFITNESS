@@ -1,0 +1,5 @@
+﻿senha supabase.txt
+.DS_Store
+__pycache__/
+*.pyc
+subir_git.bat
