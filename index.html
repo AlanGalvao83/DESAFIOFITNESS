@@ -10,6 +10,11 @@
   <!-- Chart.js & Lucide CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- MediaPipe Pose & Drawing Utils CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -44,6 +49,9 @@
         </button>
         <button class="sidebar-link" id="link-history" type="button">
           <i data-lucide="trending-up"></i> <span class="link-text">Evolução Geral</span>
+        </button>
+        <button class="sidebar-link" id="link-pushup-ai" type="button">
+          <i data-lucide="scan-face"></i> <span class="link-text">Contador IA</span>
         </button>
       </nav>
       <div class="sidebar-footer">
@@ -456,6 +464,167 @@
               <!-- Dynamically populated -->
             </div>
           </section>
+
+        </div>
+
+        <!-- SECTION 6: PUSH-UP AI COUNTER -->
+        <div id="section-pushup-ai" class="content-section">
+          
+          <!-- Header do Contador IA -->
+          <div class="pushup-ai-header card">
+            <div class="pushup-ai-header-info">
+              <div class="pushup-ai-badge">
+                <i data-lucide="sparkles"></i> <span>VISÃO COMPUTACIONAL • MEDIAPIPE</span>
+              </div>
+              <h2 class="pushup-ai-title">Contador Inteligente de Flexões</h2>
+              <p class="pushup-ai-desc">
+                Faça upload de um vídeo de treino (ou use a webcam) para analisar a postura, esqueleto corporal e <strong>contar as repetições automaticamente</strong> com validação de amplitude por IA.
+              </p>
+            </div>
+            
+            <div class="pushup-ai-actions">
+              <label class="btn btn-primary btn-upload-video" for="pushup-video-input" style="cursor: pointer;">
+                <i data-lucide="upload-cloud"></i> <span>Carregar Vídeo</span>
+              </label>
+              <input type="file" id="pushup-video-input" accept="video/*" style="display: none;">
+              
+              <button class="btn btn-outline" id="btn-pushup-webcam" type="button">
+                <i data-lucide="camera"></i> <span>Usar Câmera</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Zona de Drag and Drop Inicial (visível quando nenhum vídeo está ativo) -->
+          <div class="pushup-dropzone card" id="pushup-dropzone">
+            <div class="dropzone-inner">
+              <div class="dropzone-icon">
+                <i data-lucide="video"></i>
+              </div>
+              <h3>Arraste e solte o vídeo de flexões aqui</h3>
+              <p>Suporta MP4, MOV, WEBM. O vídeo é processado 100% no seu dispositivo com total privacidade.</p>
+              <div class="dropzone-buttons">
+                <label class="btn btn-primary" for="pushup-video-input-drop" style="cursor: pointer;">
+                  <i data-lucide="folder-open"></i> Selecionar do Computador
+                </label>
+                <input type="file" id="pushup-video-input-drop" accept="video/*" style="display: none;">
+              </div>
+              <div class="dropzone-hint">
+                <i data-lucide="info"></i> Dica: Você pode testar os vídeos da pasta <code>VIDEOS DE TREINO</code>!
+              </div>
+            </div>
+          </div>
+
+          <!-- Workspace do Analisador (visível após carregar o vídeo ou webcam) -->
+          <div class="pushup-workspace card" id="pushup-workspace" style="display: none;">
+            <div class="pushup-grid">
+              
+              <!-- Coluna da Esquerda: Player de Vídeo e Canvas Sobreposto -->
+              <div class="pushup-video-container">
+                <div class="video-canvas-wrapper" id="video-canvas-wrapper">
+                  <video id="pushup-video" playsinline muted style="display: none;"></video>
+                  <canvas id="pushup-canvas"></canvas>
+                  
+                  <!-- Overlay de Carregamento / Processamento -->
+                  <div class="canvas-loading-overlay" id="pushup-loading-overlay" style="display: none;">
+                    <div class="spinner"></div>
+                    <span id="pushup-loading-text">Carregando modelo de IA...</span>
+                  </div>
+
+                  <!-- Overlay de Feedback na Tela (Ex: +1) -->
+                  <div class="rep-feedback-flash" id="rep-feedback-flash">
+                    +1
+                  </div>
+                </div>
+
+                <!-- Barra de Controles de Reprodução -->
+                <div class="pushup-controls">
+                  <button class="btn-ctrl" id="btn-ctrl-play" type="button" title="Iniciar / Pausar">
+                    <i data-lucide="play" id="icon-ctrl-play"></i>
+                  </button>
+                  <button class="btn-ctrl" id="btn-ctrl-restart" type="button" title="Reiniciar do Início">
+                    <i data-lucide="rotate-ccw"></i>
+                  </button>
+                  <div class="timeline-container">
+                    <input type="range" class="pushup-timeline" id="pushup-timeline" min="0" max="100" value="0" step="0.1">
+                    <div class="time-display" id="pushup-time-display">00:00 / 00:00</div>
+                  </div>
+                  <div class="speed-control">
+                    <button class="btn-speed active" data-speed="1">1x</button>
+                    <button class="btn-speed" data-speed="0.5">0.5x</button>
+                  </div>
+                  <button class="btn-ctrl btn-change-video" id="btn-change-video" type="button" title="Trocar Vídeo">
+                    <i data-lucide="refresh-cw"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Coluna da Direita: Placar & Métricas Biomecânicas -->
+              <div class="pushup-metrics-panel">
+                
+                <!-- Placar Gigante de Repetições -->
+                <div class="metric-card rep-counter-box">
+                  <div class="metric-header">
+                    <span class="metric-title"><i data-lucide="dumbbell"></i> FLEXÕES VÁLIDAS</span>
+                    <span class="stage-pill" id="pushup-stage-pill">AGUARDANDO</span>
+                  </div>
+                  <div class="rep-counter-display">
+                    <span class="rep-number" id="pushup-rep-number">0</span>
+                    <span class="rep-unit">reps</span>
+                  </div>
+                  <div class="rep-feedback-text" id="pushup-feedback-text">
+                    Inicie o vídeo para começar a contagem
+                  </div>
+                </div>
+
+                <!-- Termômetro de Amplitude da Flexão -->
+                <div class="metric-card">
+                  <div class="metric-header">
+                    <span class="metric-title"><i data-lucide="gauge"></i> AMPLITUDE DO MOVIMENTO</span>
+                    <span class="metric-val" id="pushup-depth-val">0%</span>
+                  </div>
+                  <div class="depth-bar-bg">
+                    <div class="depth-bar-fill" id="pushup-depth-fill" style="width: 0%;"></div>
+                    <div class="depth-target-marker" title="Ponto de Validação (90°)"></div>
+                  </div>
+                  <div class="depth-labels">
+                    <span>Estendido (160°+)</span>
+                    <span class="target-label">Meta de Validação (≤90°)</span>
+                  </div>
+                </div>
+
+                <!-- Painel de Ângulos em Tempo Real -->
+                <div class="metric-card angles-grid">
+                  <div class="angle-box">
+                    <span class="angle-label">Cotovelo</span>
+                    <span class="angle-value" id="pushup-elbow-angle">--°</span>
+                  </div>
+                  <div class="angle-box">
+                    <span class="angle-label">Prancha / Tronco</span>
+                    <span class="angle-value" id="pushup-body-angle">--°</span>
+                  </div>
+                  <div class="angle-box">
+                    <span class="angle-label">Lado Analisado</span>
+                    <span class="angle-value" id="pushup-side-tracked" style="font-size: 0.95rem;">Detectando...</span>
+                  </div>
+                </div>
+
+                <!-- Ação Rápida de Registro para o Admin -->
+                <div class="metric-card admin-action-card">
+                  <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="check-circle-2" style="color: var(--accent-emerald);"></i> VALIDAÇÃO DO TREINO
+                  </h4>
+                  <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                    Use a contagem obtida para lançar diretamente no ranking dos participantes.
+                  </p>
+                  <button class="btn btn-primary btn-block" id="btn-pushup-register" type="button">
+                    <i data-lucide="plus-circle"></i> <span>Registrar Atividade (<strong id="pushup-register-count">0</strong> flexões)</span>
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
 
         </div>
 

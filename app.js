@@ -30,7 +30,20 @@ const state = {
   participantColors: {},
   participantsSearchTerm: '',
   previousSection: 'dashboard',
-  profileActiveTab: 'badges'
+  profileActiveTab: 'badges',
+  pushupAI: {
+    poseInstance: null,
+    videoStream: null,
+    isPlaying: false,
+    repCount: 0,
+    stage: 'IDLE',
+    dominantSide: 'right',
+    lastAngle: 180,
+    depthPercent: 0,
+    animationFrameId: null,
+    isProcessingFrame: false,
+    cameraActive: false
+  }
 };
 
 // ----------------------------------------------------
@@ -164,7 +177,37 @@ const el = {
   mobileHeaderDefault: () => document.getElementById('mobile-header-default'),
   mobileHeaderProfile: () => document.getElementById('mobile-header-profile'),
   btnBackFromProfileMobile: () => document.getElementById('btn-back-from-profile-mobile'),
-  mobileParticipantNameText: () => document.getElementById('mobile-participant-name-text')
+  mobileParticipantNameText: () => document.getElementById('mobile-participant-name-text'),
+
+  // Push-up AI Counter Elements
+  linkPushupAI: () => document.getElementById('link-pushup-ai'),
+  sectionPushupAI: () => document.getElementById('section-pushup-ai'),
+  pushupVideoInput: () => document.getElementById('pushup-video-input'),
+  pushupVideoInputDrop: () => document.getElementById('pushup-video-input-drop'),
+  pushupDropzone: () => document.getElementById('pushup-dropzone'),
+  pushupWorkspace: () => document.getElementById('pushup-workspace'),
+  pushupVideo: () => document.getElementById('pushup-video'),
+  pushupCanvas: () => document.getElementById('pushup-canvas'),
+  pushupLoadingOverlay: () => document.getElementById('pushup-loading-overlay'),
+  pushupLoadingText: () => document.getElementById('pushup-loading-text'),
+  repFeedbackFlash: () => document.getElementById('rep-feedback-flash'),
+  btnCtrlPlay: () => document.getElementById('btn-ctrl-play'),
+  iconCtrlPlay: () => document.getElementById('icon-ctrl-play'),
+  btnCtrlRestart: () => document.getElementById('btn-ctrl-restart'),
+  pushupTimeline: () => document.getElementById('pushup-timeline'),
+  pushupTimeDisplay: () => document.getElementById('pushup-time-display'),
+  btnChangeVideo: () => document.getElementById('btn-change-video'),
+  btnPushupWebcam: () => document.getElementById('btn-pushup-webcam'),
+  pushupRepNumber: () => document.getElementById('pushup-rep-number'),
+  pushupStagePill: () => document.getElementById('pushup-stage-pill'),
+  pushupFeedbackText: () => document.getElementById('pushup-feedback-text'),
+  pushupDepthFill: () => document.getElementById('pushup-depth-fill'),
+  pushupDepthVal: () => document.getElementById('pushup-depth-val'),
+  pushupElbowAngle: () => document.getElementById('pushup-elbow-angle'),
+  pushupBodyAngle: () => document.getElementById('pushup-body-angle'),
+  pushupSideTracked: () => document.getElementById('pushup-side-tracked'),
+  btnPushupRegister: () => document.getElementById('btn-pushup-register'),
+  pushupRegisterCount: () => document.getElementById('pushup-register-count')
 };
 
 // ----------------------------------------------------
@@ -1618,12 +1661,19 @@ function switchSection(sectionId) {
   if (el.linkParticipants()) el.linkParticipants().classList.toggle('active', sectionId === 'participants');
   el.linkRace().classList.toggle('active', sectionId === 'race');
   el.linkHistory().classList.toggle('active', sectionId === 'history');
+  if (el.linkPushupAI()) el.linkPushupAI().classList.toggle('active', sectionId === 'pushup-ai');
   
   el.sectionDashboard().classList.toggle('active', sectionId === 'dashboard');
   if (el.sectionParticipants()) el.sectionParticipants().classList.toggle('active', sectionId === 'participants');
   if (el.sectionParticipantProfile()) el.sectionParticipantProfile().classList.toggle('active', sectionId === 'participant-profile');
   el.sectionRace().classList.toggle('active', sectionId === 'race');
   el.sectionHistory().classList.toggle('active', sectionId === 'history');
+  if (el.sectionPushupAI()) el.sectionPushupAI().classList.toggle('active', sectionId === 'pushup-ai');
+
+  // If leaving pushup-ai section, pause video if playing
+  if (sectionId !== 'pushup-ai') {
+    pausePushupVideo();
+  }
 
   // Control top header and mobile header profile visibility
   if (el.mainTopBar()) {
@@ -2485,6 +2535,566 @@ function initEvents() {
         initRaceControls(challenge).then(() => renderCharts(challenge));
       }
     }
+  });
+
+  // Initialize Push-up AI Counter Events
+  initPushupAIEvents();
+}
+
+// ----------------------------------------------------
+// Contador Inteligente de Flexões (MediaPipe AI)
+// ----------------------------------------------------
+
+function playRepAudioBeep() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  } catch (e) {
+    // AudioContext não disponível ou restrito
+  }
+}
+
+function calculateAngle(a, b, c) {
+  if (!a || !b || !c) return 180;
+  const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+  let angle = Math.abs((radians * 180.0) / Math.PI);
+  if (angle > 180.0) {
+    angle = 360.0 - angle;
+  }
+  return Math.round(angle);
+}
+
+function formatVideoTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+async function initMediaPipePose() {
+  if (state.pushupAI.poseInstance) return state.pushupAI.poseInstance;
+  
+  if (typeof Pose === 'undefined') {
+    showToast('Biblioteca MediaPipe Pose não carregada. Verifique sua conexão.', 'error');
+    throw new Error('MediaPipe Pose CDN not available.');
+  }
+
+  if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'flex';
+  if (el.pushupLoadingText()) el.pushupLoadingText().textContent = 'Carregando inteligência artificial...';
+
+  try {
+    const pose = new Pose({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onPushupPoseResults);
+    state.pushupAI.poseInstance = pose;
+    if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'none';
+    return pose;
+  } catch (err) {
+    console.error('Erro ao inicializar MediaPipe:', err);
+    if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'none';
+    showToast('Falha ao inicializar modelo de IA.', 'error');
+    throw err;
+  }
+}
+
+function resetPushupStats() {
+  state.pushupAI.repCount = 0;
+  state.pushupAI.stage = 'IDLE';
+  state.pushupAI.lastAngle = 180;
+  state.pushupAI.depthPercent = 0;
+  
+  if (el.pushupRepNumber()) el.pushupRepNumber().textContent = '0';
+  if (el.pushupRegisterCount()) el.pushupRegisterCount().textContent = '0';
+  if (el.pushupStagePill()) {
+    el.pushupStagePill().textContent = 'AGUARDANDO';
+    el.pushupStagePill().className = 'stage-pill';
+  }
+  if (el.pushupFeedbackText()) el.pushupFeedbackText().textContent = 'Inicie o vídeo para começar a contagem';
+  if (el.pushupDepthFill()) el.pushupDepthFill().style.width = '0%';
+  if (el.pushupDepthVal()) el.pushupDepthVal().textContent = '0%';
+  if (el.pushupElbowAngle()) el.pushupElbowAngle().textContent = '--°';
+  if (el.pushupBodyAngle()) el.pushupBodyAngle().textContent = '--°';
+  if (el.pushupSideTracked()) el.pushupSideTracked().textContent = 'Detectando...';
+}
+
+function handlePushupVideoFile(file) {
+  if (!file) return;
+  stopPushupCamera();
+  resetPushupStats();
+
+  const url = URL.createObjectURL(file);
+  const video = el.pushupVideo();
+  if (!video) return;
+
+  if (el.pushupDropzone()) el.pushupDropzone().style.display = 'none';
+  if (el.pushupWorkspace()) el.pushupWorkspace().style.display = 'block';
+
+  video.src = url;
+  video.load();
+
+  video.onloadedmetadata = () => {
+    const canvas = el.pushupCanvas();
+    if (canvas) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 360;
+    }
+    updateVideoTimeDisplay();
+    initMediaPipePose().then(() => {
+      playPushupVideo();
+    }).catch(err => console.error(err));
+  };
+}
+
+async function startPushupWebcam() {
+  stopPushupCamera();
+  resetPushupStats();
+
+  const video = el.pushupVideo();
+  if (!video) return;
+
+  try {
+    if (el.pushupDropzone()) el.pushupDropzone().style.display = 'none';
+    if (el.pushupWorkspace()) el.pushupWorkspace().style.display = 'block';
+    if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'flex';
+    if (el.pushupLoadingText()) el.pushupLoadingText().textContent = 'Iniciando câmera...';
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+
+    state.pushupAI.videoStream = stream;
+    state.pushupAI.cameraActive = true;
+    video.srcObject = stream;
+    await video.play();
+
+    const canvas = el.pushupCanvas();
+    if (canvas) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+    }
+
+    await initMediaPipePose();
+    state.pushupAI.isPlaying = true;
+    updatePlayPauseButtonUI(true);
+    processPushupVideoLoop();
+  } catch (err) {
+    console.error('Erro ao acessar webcam:', err);
+    showToast('Não foi possível acessar a câmera. Verifique as permissões.', 'error');
+    if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'none';
+  }
+}
+
+function stopPushupCamera() {
+  if (state.pushupAI.videoStream) {
+    state.pushupAI.videoStream.getTracks().forEach(t => t.stop());
+    state.pushupAI.videoStream = null;
+  }
+  state.pushupAI.cameraActive = false;
+  const video = el.pushupVideo();
+  if (video && video.srcObject) {
+    video.srcObject = null;
+  }
+}
+
+function playPushupVideo() {
+  const video = el.pushupVideo();
+  if (!video) return;
+  video.play().then(() => {
+    state.pushupAI.isPlaying = true;
+    updatePlayPauseButtonUI(true);
+    processPushupVideoLoop();
+  }).catch(err => console.warn('Play error:', err));
+}
+
+function pausePushupVideo() {
+  const video = el.pushupVideo();
+  if (video) video.pause();
+  state.pushupAI.isPlaying = false;
+  updatePlayPauseButtonUI(false);
+  if (state.pushupAI.animationFrameId) {
+    cancelAnimationFrame(state.pushupAI.animationFrameId);
+    state.pushupAI.animationFrameId = null;
+  }
+}
+
+function updatePlayPauseButtonUI(isPlaying) {
+  if (el.iconCtrlPlay()) {
+    el.iconCtrlPlay().setAttribute('data-lucide', isPlaying ? 'pause' : 'play');
+    lucide.createIcons();
+  }
+}
+
+function updateVideoTimeDisplay() {
+  const video = el.pushupVideo();
+  if (!video || state.pushupAI.cameraActive) {
+    if (el.pushupTimeDisplay()) el.pushupTimeDisplay().textContent = 'AO VIVO';
+    return;
+  }
+  const current = video.currentTime || 0;
+  const total = video.duration || 0;
+  if (el.pushupTimeDisplay()) {
+    el.pushupTimeDisplay().textContent = `${formatVideoTime(current)} / ${formatVideoTime(total)}`;
+  }
+  if (el.pushupTimeline() && total > 0) {
+    el.pushupTimeline().value = (current / total) * 100;
+  }
+}
+
+async function processPushupVideoLoop() {
+  const video = el.pushupVideo();
+  if (!video || video.paused || video.ended) {
+    state.pushupAI.isPlaying = false;
+    updatePlayPauseButtonUI(false);
+    return;
+  }
+
+  updateVideoTimeDisplay();
+
+  if (state.pushupAI.poseInstance && !state.pushupAI.isProcessingFrame) {
+    state.pushupAI.isProcessingFrame = true;
+    try {
+      await state.pushupAI.poseInstance.send({ image: video });
+    } catch (err) {
+      console.warn('Erro em pose.send:', err);
+    } finally {
+      state.pushupAI.isProcessingFrame = false;
+    }
+  }
+
+  state.pushupAI.animationFrameId = requestAnimationFrame(processPushupVideoLoop);
+}
+
+function onPushupPoseResults(results) {
+  const canvas = el.pushupCanvas();
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (results.image && (canvas.width !== results.image.width || canvas.height !== results.image.height)) {
+    canvas.width = results.image.width;
+    canvas.height = results.image.height;
+  }
+
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+  if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+    const lms = results.poseLandmarks;
+
+    const toPx = (lm) => ({
+      x: lm.x * canvas.width,
+      y: lm.y * canvas.height,
+      visibility: lm.visibility || 0
+    });
+
+    const leftShoulder = toPx(lms[11]);
+    const rightShoulder = toPx(lms[12]);
+    const leftElbow = toPx(lms[13]);
+    const rightElbow = toPx(lms[14]);
+    const leftWrist = toPx(lms[15]);
+    const rightWrist = toPx(lms[16]);
+    const leftHip = toPx(lms[23]);
+    const rightHip = toPx(lms[24]);
+    const leftKnee = toPx(lms[25]);
+    const rightKnee = toPx(lms[26]);
+    const leftAnkle = toPx(lms[27]);
+    const rightAnkle = toPx(lms[28]);
+
+    const leftVisibility = (leftShoulder.visibility + leftElbow.visibility + leftWrist.visibility) / 3;
+    const rightVisibility = (rightShoulder.visibility + rightElbow.visibility + rightWrist.visibility) / 3;
+    const isLeft = leftVisibility >= rightVisibility;
+    const dominantSideText = isLeft ? 'Esquerdo' : 'Direito';
+
+    const shoulder = isLeft ? leftShoulder : rightShoulder;
+    const elbow = isLeft ? leftElbow : rightElbow;
+    const wrist = isLeft ? leftWrist : rightWrist;
+    const hip = isLeft ? leftHip : rightHip;
+    const ankle = isLeft ? leftAnkle : rightAnkle;
+    const knee = isLeft ? leftKnee : rightKnee;
+
+    const elbowAngle = calculateAngle(shoulder, elbow, wrist);
+    const bodyAngle = calculateAngle(shoulder, hip, (ankle.visibility > 0.3 ? ankle : knee));
+
+    if (el.pushupElbowAngle()) el.pushupElbowAngle().textContent = `${elbowAngle}°`;
+    if (el.pushupBodyAngle()) el.pushupBodyAngle().textContent = `${bodyAngle}°`;
+    if (el.pushupSideTracked()) el.pushupSideTracked().textContent = dominantSideText;
+
+    const clampedAngle = Math.max(80, Math.min(165, elbowAngle));
+    const depth = Math.round(Math.max(0, Math.min(100, ((160 - clampedAngle) / (160 - 90)) * 100)));
+    if (el.pushupDepthFill()) el.pushupDepthFill().style.width = `${depth}%`;
+    if (el.pushupDepthVal()) el.pushupDepthVal().textContent = `${depth}%`;
+
+    // Push-up State Machine
+    if (elbowAngle <= 95) {
+      if (state.pushupAI.stage !== 'DOWN') {
+        state.pushupAI.stage = 'DOWN';
+        if (el.pushupStagePill()) {
+          el.pushupStagePill().textContent = 'FLEXIONADO (OK)';
+          el.pushupStagePill().className = 'stage-pill stage-down';
+        }
+        if (el.pushupFeedbackText()) {
+          el.pushupFeedbackText().textContent = 'Ótima profundidade! Agora suba!';
+          el.pushupFeedbackText().style.color = 'var(--accent-emerald)';
+        }
+      }
+    } else if (elbowAngle >= 155) {
+      if (state.pushupAI.stage === 'DOWN') {
+        state.pushupAI.repCount++;
+        state.pushupAI.stage = 'UP';
+
+        if (el.pushupRepNumber()) {
+          el.pushupRepNumber().textContent = state.pushupAI.repCount;
+          el.pushupRepNumber().classList.add('pulse');
+          setTimeout(() => el.pushupRepNumber()?.classList.remove('pulse'), 300);
+        }
+        if (el.pushupRegisterCount()) {
+          el.pushupRegisterCount().textContent = state.pushupAI.repCount;
+        }
+
+        playRepAudioBeep();
+        if (el.repFeedbackFlash()) {
+          el.repFeedbackFlash().classList.remove('flash-active');
+          void el.repFeedbackFlash().offsetWidth;
+          el.repFeedbackFlash().classList.add('flash-active');
+        }
+
+        if (el.pushupStagePill()) {
+          el.pushupStagePill().textContent = 'SUBIDA CONCLUÍDA';
+          el.pushupStagePill().className = 'stage-pill stage-up';
+        }
+        if (el.pushupFeedbackText()) {
+          el.pushupFeedbackText().textContent = `Repetição #${state.pushupAI.repCount} validada com sucesso!`;
+          el.pushupFeedbackText().style.color = 'var(--accent-emerald)';
+        }
+      } else {
+        if (state.pushupAI.stage !== 'UP') {
+          state.pushupAI.stage = 'UP';
+          if (el.pushupStagePill()) {
+            el.pushupStagePill().textContent = 'POSIÇÃO ALTA (PRONTO)';
+            el.pushupStagePill().className = 'stage-pill stage-up';
+          }
+          if (el.pushupFeedbackText()) {
+            el.pushupFeedbackText().textContent = 'Pronto para descer';
+            el.pushupFeedbackText().style.color = 'var(--text-secondary)';
+          }
+        }
+      }
+    } else {
+      if (state.pushupAI.stage === 'UP') {
+        if (el.pushupStagePill()) {
+          el.pushupStagePill().textContent = 'DESCENDO...';
+          el.pushupStagePill().className = 'stage-pill';
+        }
+        if (el.pushupFeedbackText()) {
+          el.pushupFeedbackText().textContent = 'Desça até a linha de 90°';
+          el.pushupFeedbackText().style.color = 'var(--accent-amber)';
+        }
+      }
+    }
+
+    if (bodyAngle < 140) {
+      if (el.pushupFeedbackText()) {
+        el.pushupFeedbackText().textContent = '⚠️ Alinhe o quadril! Evite deixar o corpo ceder.';
+        el.pushupFeedbackText().style.color = '#ef4444';
+      }
+    }
+
+    drawPushupSkeleton(ctx, lms, canvas.width, canvas.height, isLeft, elbowAngle, bodyAngle);
+  }
+
+  ctx.restore();
+}
+
+function drawPushupSkeleton(ctx, lms, w, h, isLeft, elbowAngle, bodyAngle) {
+  const connections = [
+    [11, 12],
+    [11, 13], [13, 15],
+    [12, 14], [14, 16],
+    [11, 23], [12, 24],
+    [23, 24],
+    [23, 25], [25, 27],
+    [24, 26], [26, 28]
+  ];
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+
+  connections.forEach(([i, j]) => {
+    const p1 = lms[i];
+    const p2 = lms[j];
+    if (p1 && p2 && (p1.visibility || 0) > 0.25 && (p2.visibility || 0) > 0.25) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x * w, p1.y * h);
+      ctx.lineTo(p2.x * w, p2.y * h);
+      ctx.stroke();
+    }
+  });
+
+  const activeArmIdx = isLeft ? [11, 13, 15] : [12, 14, 16];
+  const shoulder = lms[activeArmIdx[0]];
+  const elbow = lms[activeArmIdx[1]];
+  const wrist = lms[activeArmIdx[2]];
+
+  if (shoulder && elbow && wrist) {
+    const colorArm = elbowAngle <= 95 ? '#10b981' : (elbowAngle <= 130 ? '#f59e0b' : '#06b6d4');
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = colorArm;
+    ctx.beginPath();
+    ctx.moveTo(shoulder.x * w, shoulder.y * h);
+    ctx.lineTo(elbow.x * w, elbow.y * h);
+    ctx.lineTo(wrist.x * w, wrist.y * h);
+    ctx.stroke();
+
+    [shoulder, elbow, wrist].forEach(pt => {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(pt.x * w, pt.y * h, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = colorArm;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(elbow.x * w + 10, elbow.y * h - 22, 54, 24);
+    ctx.strokeStyle = colorArm;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(elbow.x * w + 10, elbow.y * h - 22, 54, 24);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.fillText(`${elbowAngle}°`, elbow.x * w + 16, elbow.y * h - 6);
+  }
+}
+
+function initPushupAIEvents() {
+  if (el.linkPushupAI()) {
+    el.linkPushupAI().addEventListener('click', () => switchSection('pushup-ai'));
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handlePushupVideoFile(file);
+  };
+
+  el.pushupVideoInput()?.addEventListener('change', handleFileChange);
+  el.pushupVideoInputDrop()?.addEventListener('change', handleFileChange);
+
+  const dropzone = el.pushupDropzone();
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handlePushupVideoFile(files[0]);
+      }
+    });
+  }
+
+  el.btnPushupWebcam()?.addEventListener('click', () => {
+    startPushupWebcam();
+  });
+
+  el.btnCtrlPlay()?.addEventListener('click', () => {
+    if (state.pushupAI.isPlaying) {
+      pausePushupVideo();
+    } else {
+      playPushupVideo();
+    }
+  });
+
+  el.btnCtrlRestart()?.addEventListener('click', () => {
+    const video = el.pushupVideo();
+    if (video) {
+      video.currentTime = 0;
+      resetPushupStats();
+      playPushupVideo();
+    }
+  });
+
+  el.pushupTimeline()?.addEventListener('input', (e) => {
+    const video = el.pushupVideo();
+    if (video && video.duration) {
+      video.currentTime = (e.target.value / 100) * video.duration;
+    }
+  });
+
+  document.querySelectorAll('.btn-speed').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      const speed = parseFloat(e.target.getAttribute('data-speed') || '1');
+      const video = el.pushupVideo();
+      if (video) video.playbackRate = speed;
+    });
+  });
+
+  el.btnChangeVideo()?.addEventListener('click', () => {
+    pausePushupVideo();
+    stopPushupCamera();
+    resetPushupStats();
+    if (el.pushupWorkspace()) el.pushupWorkspace().style.display = 'none';
+    if (el.pushupDropzone()) el.pushupDropzone().style.display = 'block';
+  });
+
+  el.btnPushupRegister()?.addEventListener('click', () => {
+    const count = state.pushupAI.repCount;
+    if (count <= 0) {
+      showToast('Nenhuma repetição validada ainda para registrar.', 'info');
+      return;
+    }
+    if (!state.isAdmin) {
+      showToast('Entre como administrador para registrar o treino oficial.', 'warning');
+      toggleModal(el.modalAdminLogin(), true);
+      return;
+    }
+
+    toggleModal(el.modalLog(), true);
+    if (el.logTypeSelect()) {
+      el.logTypeSelect().value = 'pushup';
+      el.logTypeSelect().dispatchEvent(new Event('change'));
+    }
+    const pushupInput = document.getElementById('pushups-count');
+    if (pushupInput) {
+      pushupInput.value = count;
+    }
+    showToast(`Total de ${count} flexões pré-preenchido! Selecione o atleta para salvar.`);
   });
 }
 
