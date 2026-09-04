@@ -39,11 +39,20 @@ const state = {
     repCount: 0,
     stage: 'IDLE',
     dominantSide: 'right',
+    cameraMode: 'Detectando...',
     lastAngle: 180,
     depthPercent: 0,
     animationFrameId: null,
     isProcessingFrame: false,
-    cameraActive: false
+    cameraActive: false,
+    leftTracker: { stage: 'UP', downTime: 0, smoothAngle: null, history: [] },
+    rightTracker: { stage: 'UP', downTime: 0, smoothAngle: null, history: [] },
+    dispTracker: { stage: 'UP', downTime: 0, smoothDisp: null },
+    lastRepTimestamp: 0,
+    historyTorsoDx: [],
+    historyShDx: [],
+    historyLVis: [],
+    historyRVis: []
   }
 };
 
@@ -2931,6 +2940,15 @@ function resetPushupStats() {
   state.pushupAI.stage = 'IDLE';
   state.pushupAI.lastAngle = 180;
   state.pushupAI.depthPercent = 0;
+  state.pushupAI.cameraMode = 'Detectando...';
+  state.pushupAI.leftTracker = { stage: 'UP', downTime: 0, smoothAngle: null, history: [] };
+  state.pushupAI.rightTracker = { stage: 'UP', downTime: 0, smoothAngle: null, history: [] };
+  state.pushupAI.dispTracker = { stage: 'UP', downTime: 0, smoothDisp: null };
+  state.pushupAI.lastRepTimestamp = 0;
+  state.pushupAI.historyTorsoDx = [];
+  state.pushupAI.historyShDx = [];
+  state.pushupAI.historyLVis = [];
+  state.pushupAI.historyRVis = [];
   
   if (el.pushupRepNumber()) el.pushupRepNumber().textContent = '0';
   if (el.pushupRegisterCount()) el.pushupRegisterCount().textContent = '0';
@@ -3133,53 +3151,171 @@ function onPushupPoseResults(results) {
 
     const leftVisibility = (leftShoulder.visibility + leftElbow.visibility + leftWrist.visibility) / 3;
     const rightVisibility = (rightShoulder.visibility + rightElbow.visibility + rightWrist.visibility) / 3;
-    const isLeft = leftVisibility >= rightVisibility;
-    const dominantSideText = isLeft ? 'Esquerdo' : 'Direito';
 
-    const shoulder = isLeft ? leftShoulder : rightShoulder;
-    const elbow = isLeft ? leftElbow : rightElbow;
-    const wrist = isLeft ? leftWrist : rightWrist;
-    const hip = isLeft ? leftHip : rightHip;
-    const ankle = isLeft ? leftAnkle : rightAnkle;
-    const knee = isLeft ? leftKnee : rightKnee;
+    // Ângulos articulares e geometria do torso
+    const laRaw = calculateAngle(leftShoulder, leftElbow, leftWrist);
+    const raRaw = calculateAngle(rightShoulder, rightElbow, rightWrist);
 
-    const elbowAngle = calculateAngle(shoulder, elbow, wrist);
-    const bodyAngle = calculateAngle(shoulder, hip, (ankle.visibility > 0.3 ? ankle : knee));
+    const shX = (lms[11].x + lms[12].x) / 2;
+    const shY = (lms[11].y + lms[12].y) / 2;
+    const hipX = (lms[23].x + lms[24].x) / 2;
+    const wy = (lms[15].y + lms[16].y) / 2;
 
-    if (el.pushupElbowAngle()) el.pushupElbowAngle().textContent = `${elbowAngle}°`;
-    if (el.pushupBodyAngle()) el.pushupBodyAngle().textContent = `${bodyAngle}°`;
-    if (el.pushupSideTracked()) el.pushupSideTracked().textContent = dominantSideText;
+    const torsoDx = Math.abs(shX - hipX);
+    const shDx = Math.abs(lms[11].x - lms[12].x);
+    const dispY = wy - shY; // Maior na subida (braços esticados), menor na descida (peito no chão)
 
-    const clampedAngle = Math.max(80, Math.min(165, elbowAngle));
-    const depth = Math.round(Math.max(0, Math.min(100, ((160 - clampedAngle) / (160 - 90)) * 100)));
-    if (el.pushupDepthFill()) el.pushupDepthFill().style.width = `${depth}%`;
-    if (el.pushupDepthVal()) el.pushupDepthVal().textContent = `${depth}%`;
+    // Acúmulo de histórico recente para classificação estável de perspectiva
+    const ai = state.pushupAI;
+    ai.historyTorsoDx.push(torsoDx);
+    ai.historyShDx.push(shDx);
+    ai.historyLVis.push(leftVisibility);
+    ai.historyRVis.push(rightVisibility);
+    if (ai.historyTorsoDx.length > 30) {
+      ai.historyTorsoDx.shift();
+      ai.historyShDx.shift();
+      ai.historyLVis.shift();
+      ai.historyRVis.shift();
+    }
 
-    // Push-up State Machine
-    if (elbowAngle <= 95) {
-      if (state.pushupAI.stage !== 'DOWN') {
-        state.pushupAI.stage = 'DOWN';
-        if (el.pushupStagePill()) {
-          el.pushupStagePill().textContent = 'FLEXIONADO (OK)';
-          el.pushupStagePill().className = 'stage-pill stage-down';
-        }
-        if (el.pushupFeedbackText()) {
-          el.pushupFeedbackText().textContent = 'Ótima profundidade! Agora suba!';
-          el.pushupFeedbackText().style.color = 'var(--accent-emerald)';
+    const meanTorsoDx = ai.historyTorsoDx.reduce((a, b) => a + b, 0) / ai.historyTorsoDx.length;
+    const meanShDx = ai.historyShDx.reduce((a, b) => a + b, 0) / ai.historyShDx.length;
+    const meanLVis = ai.historyLVis.reduce((a, b) => a + b, 0) / ai.historyLVis.length;
+    const meanRVis = ai.historyRVis.reduce((a, b) => a + b, 0) / ai.historyRVis.length;
+
+    // Auto-identificação de Perspectiva
+    const isProfile = meanTorsoDx > 0.35;
+    const isFrontal = (!isProfile) && (meanShDx > 0.50 && Math.abs(meanLVis - meanRVis) < 0.20);
+    const cameraMode = isProfile ? 'Perfil Lateral' : (isFrontal ? 'Frontal' : 'Diagonal / Superior');
+    ai.cameraMode = cameraMode;
+
+    // Marca temporal sincronizada (com o vídeo ou com relógio de alta precisão)
+    const video = el.pushupVideo();
+    const now = (video && !ai.cameraActive && !isNaN(video.currentTime) && video.currentTime > 0)
+      ? (video.currentTime * 1000)
+      : performance.now();
+
+    // 1. Rastreador Braço Esquerdo
+    const lt = ai.leftTracker;
+    lt.smoothAngle = (lt.smoothAngle === null) ? laRaw : (0.45 * laRaw + 0.55 * lt.smoothAngle);
+    lt.history.push(laRaw);
+    if (lt.history.length > 50) lt.history.shift();
+
+    let leftRepFinished = false;
+    if (lt.smoothAngle <= 102.0) {
+      if (lt.stage !== 'DOWN') {
+        lt.stage = 'DOWN';
+        lt.downTime = now;
+      }
+    } else if (lt.smoothAngle >= 139.0) {
+      if (lt.stage === 'DOWN') {
+        if ((now - lt.downTime) >= 140) {
+          lt.stage = 'UP';
+          leftRepFinished = true;
+        } else {
+          lt.stage = 'UP';
         }
       }
-    } else if (elbowAngle >= 155) {
-      if (state.pushupAI.stage === 'DOWN') {
-        state.pushupAI.repCount++;
-        state.pushupAI.stage = 'UP';
+    }
+
+    // 2. Rastreador Braço Direito
+    const rt = ai.rightTracker;
+    rt.smoothAngle = (rt.smoothAngle === null) ? raRaw : (0.45 * raRaw + 0.55 * rt.smoothAngle);
+    rt.history.push(raRaw);
+    if (rt.history.length > 50) rt.history.shift();
+
+    let rightRepFinished = false;
+    if (rt.smoothAngle <= 102.0) {
+      if (rt.stage !== 'DOWN') {
+        rt.stage = 'DOWN';
+        rt.downTime = now;
+      }
+    } else if (rt.smoothAngle >= 139.0) {
+      if (rt.stage === 'DOWN') {
+        if ((now - rt.downTime) >= 140) {
+          rt.stage = 'UP';
+          rightRepFinished = true;
+        } else {
+          rt.stage = 'UP';
+        }
+      }
+    }
+
+    // 3. Rastreador de Deslocamento Frontal
+    const dt = ai.dispTracker;
+    dt.smoothDisp = (dt.smoothDisp === null) ? dispY : (0.35 * dispY + 0.65 * dt.smoothDisp);
+    const minElbowAngle = Math.min(lt.smoothAngle, rt.smoothAngle);
+
+    let dispRepFinished = false;
+    if ((dt.smoothDisp <= 0.24 && minElbowAngle <= 125) || minElbowAngle <= 95) {
+      if (dt.stage !== 'DOWN') {
+        dt.stage = 'DOWN';
+        dt.downTime = now;
+      }
+    } else if ((dt.smoothDisp >= 0.35 && minElbowAngle >= 135) || minElbowAngle >= 150) {
+      if (dt.stage === 'DOWN') {
+        if ((now - dt.downTime) >= 180) {
+          dt.stage = 'UP';
+          dispRepFinished = true;
+        } else {
+          dt.stage = 'UP';
+        }
+      }
+    }
+
+    // 4. Amplitude Biomecânica Dinâmica (Percentil 90 - Percentil 10)
+    const calcAmp = (arr) => {
+      if (arr.length < 5) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const p10 = sorted[Math.floor(sorted.length * 0.1)];
+      const p90 = sorted[Math.floor(sorted.length * 0.9)];
+      return p90 - p10;
+    };
+    const lAmp = calcAmp(lt.history);
+    const rAmp = calcAmp(rt.history);
+
+    // 5. Seleção do Rastreador Ativo de Acordo com a Câmera
+    let chosenRepTriggered = false;
+    let activeAngle = 180;
+    let activeTrackerName = 'Esquerdo';
+    let currentStage = 'UP';
+
+    if (isProfile) {
+      const useLeft = meanLVis >= meanRVis;
+      activeTrackerName = useLeft ? 'Perfil (Esq)' : 'Perfil (Dir)';
+      activeAngle = useLeft ? lt.smoothAngle : rt.smoothAngle;
+      currentStage = useLeft ? lt.stage : rt.stage;
+      chosenRepTriggered = useLeft ? leftRepFinished : rightRepFinished;
+    } else if (isFrontal) {
+      activeTrackerName = 'Frontal (Torso)';
+      activeAngle = minElbowAngle;
+      currentStage = dt.stage;
+      chosenRepTriggered = dispRepFinished;
+    } else {
+      // Diagonal ou Superior: escolhe o braço com maior amplitude real de movimento
+      const useLeft = lAmp >= rAmp;
+      activeTrackerName = useLeft ? 'Diag/Sup (Esq)' : 'Diag/Sup (Dir)';
+      activeAngle = useLeft ? lt.smoothAngle : rt.smoothAngle;
+      currentStage = useLeft ? lt.stage : rt.stage;
+      chosenRepTriggered = useLeft ? leftRepFinished : rightRepFinished;
+    }
+
+    ai.stage = currentStage;
+    ai.lastAngle = activeAngle;
+
+    // 6. Validação e Trava Anti-Repique (Mínimo 480ms entre repetições válidas)
+    if (chosenRepTriggered) {
+      if ((now - ai.lastRepTimestamp) >= 480) {
+        ai.repCount++;
+        ai.lastRepTimestamp = now;
 
         if (el.pushupRepNumber()) {
-          el.pushupRepNumber().textContent = state.pushupAI.repCount;
+          el.pushupRepNumber().textContent = ai.repCount;
           el.pushupRepNumber().classList.add('pulse');
           setTimeout(() => el.pushupRepNumber()?.classList.remove('pulse'), 300);
         }
         if (el.pushupRegisterCount()) {
-          el.pushupRegisterCount().textContent = state.pushupAI.repCount;
+          el.pushupRegisterCount().textContent = ai.repCount;
         }
 
         playRepAudioBeep();
@@ -3194,43 +3330,76 @@ function onPushupPoseResults(results) {
           el.pushupStagePill().className = 'stage-pill stage-up';
         }
         if (el.pushupFeedbackText()) {
-          el.pushupFeedbackText().textContent = `Repetição #${state.pushupAI.repCount} validada com sucesso!`;
+          el.pushupFeedbackText().textContent = `Repetição #${ai.repCount} validada com sucesso!`;
+          el.pushupFeedbackText().style.color = 'var(--accent-emerald)';
+        }
+      }
+    } else {
+      if (currentStage === 'DOWN') {
+        if (el.pushupStagePill()) {
+          el.pushupStagePill().textContent = 'FLEXIONADO (OK)';
+          el.pushupStagePill().className = 'stage-pill stage-down';
+        }
+        if (el.pushupFeedbackText()) {
+          el.pushupFeedbackText().textContent = 'Ótima profundidade! Agora suba!';
           el.pushupFeedbackText().style.color = 'var(--accent-emerald)';
         }
       } else {
-        if (state.pushupAI.stage !== 'UP') {
-          state.pushupAI.stage = 'UP';
+        if (activeAngle >= 135) {
           if (el.pushupStagePill()) {
             el.pushupStagePill().textContent = 'POSIÇÃO ALTA (PRONTO)';
             el.pushupStagePill().className = 'stage-pill stage-up';
           }
-          if (el.pushupFeedbackText()) {
+          if (el.pushupFeedbackText() && !el.pushupFeedbackText().textContent.includes('Repetição #')) {
             el.pushupFeedbackText().textContent = 'Pronto para descer';
             el.pushupFeedbackText().style.color = 'var(--text-secondary)';
           }
-        }
-      }
-    } else {
-      if (state.pushupAI.stage === 'UP') {
-        if (el.pushupStagePill()) {
-          el.pushupStagePill().textContent = 'DESCENDO...';
-          el.pushupStagePill().className = 'stage-pill';
-        }
-        if (el.pushupFeedbackText()) {
-          el.pushupFeedbackText().textContent = 'Desça até a linha de 90°';
-          el.pushupFeedbackText().style.color = 'var(--accent-amber)';
+        } else {
+          if (el.pushupStagePill()) {
+            el.pushupStagePill().textContent = 'DESCENDO...';
+            el.pushupStagePill().className = 'stage-pill';
+          }
+          if (el.pushupFeedbackText() && !el.pushupFeedbackText().textContent.includes('Repetição #')) {
+            el.pushupFeedbackText().textContent = 'Desça até a meta de flexão (≤100°)';
+            el.pushupFeedbackText().style.color = 'var(--accent-amber)';
+          }
         }
       }
     }
 
-    if (bodyAngle < 140) {
+    // Ângulo da prancha para postura
+    const dominantIsLeft = activeTrackerName.includes('Esq');
+    const shoulder = dominantIsLeft ? leftShoulder : rightShoulder;
+    const hip = dominantIsLeft ? leftHip : rightHip;
+    const ankle = dominantIsLeft ? leftAnkle : rightAnkle;
+    const knee = dominantIsLeft ? leftKnee : rightKnee;
+    const bodyAngle = calculateAngle(shoulder, hip, (ankle.visibility > 0.3 ? ankle : knee));
+
+    if (el.pushupElbowAngle()) el.pushupElbowAngle().textContent = `${Math.round(activeAngle)}°`;
+    if (el.pushupBodyAngle()) el.pushupBodyAngle().textContent = `${Math.round(bodyAngle)}°`;
+    if (el.pushupSideTracked()) el.pushupSideTracked().textContent = activeTrackerName;
+
+    // Barra de Progresso de Amplitude
+    let depth = 0;
+    if (isFrontal) {
+      const clampedDisp = Math.max(0.12, Math.min(0.40, dt.smoothDisp));
+      depth = Math.round(((0.40 - clampedDisp) / (0.40 - 0.12)) * 100);
+    } else {
+      const clampedAngle = Math.max(85, Math.min(150, activeAngle));
+      depth = Math.round(Math.max(0, Math.min(100, ((145 - clampedAngle) / (145 - 95)) * 100)));
+    }
+    ai.depthPercent = depth;
+    if (el.pushupDepthFill()) el.pushupDepthFill().style.width = `${depth}%`;
+    if (el.pushupDepthVal()) el.pushupDepthVal().textContent = `${depth}%`;
+
+    if (bodyAngle < 135) {
       if (el.pushupFeedbackText()) {
         el.pushupFeedbackText().textContent = '⚠️ Alinhe o quadril! Evite deixar o corpo ceder.';
         el.pushupFeedbackText().style.color = '#ef4444';
       }
     }
 
-    drawPushupSkeleton(ctx, lms, canvas.width, canvas.height, isLeft, elbowAngle, bodyAngle);
+    drawPushupSkeleton(ctx, lms, canvas.width, canvas.height, dominantIsLeft, activeAngle, bodyAngle);
   }
 
   ctx.restore();
@@ -3267,7 +3436,7 @@ function drawPushupSkeleton(ctx, lms, w, h, isLeft, elbowAngle, bodyAngle) {
   const wrist = lms[activeArmIdx[2]];
 
   if (shoulder && elbow && wrist) {
-    const colorArm = elbowAngle <= 95 ? '#10b981' : (elbowAngle <= 130 ? '#f59e0b' : '#06b6d4');
+    const colorArm = elbowAngle <= 102 ? '#10b981' : (elbowAngle <= 130 ? '#f59e0b' : '#06b6d4');
     ctx.lineWidth = 5;
     ctx.strokeStyle = colorArm;
     ctx.beginPath();
