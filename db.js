@@ -471,7 +471,7 @@ export async function logActivity({ challengeId, participantId, type, amount, du
       pace,
       validator_id: type === 'pushup' ? validatorId : null,
       status: 'approved',
-      date: date || new Date().toISOString().split('T')[0],
+      date: date || new Date().toLocaleDateString('en-CA'),
       created_at: new Date().toISOString()
     };
     list.push(newA);
@@ -498,7 +498,7 @@ export async function logActivity({ challengeId, participantId, type, amount, du
     pace,
     validator_id: type === 'pushup' ? validatorId : null,
     status: 'approved',
-    date: date || new Date().toISOString().split('T')[0]
+    date: date || new Date().toLocaleDateString('en-CA')
   };
   
   const { data, error } = await supabase

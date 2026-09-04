@@ -301,15 +301,34 @@ function formatDuration(seconds) {
   return hrs > 0 ? `${hrs}h ${mins}m ${secs}s` : `${mins}m ${secs}s`;
 }
 
+function getLocalDateStr(date = new Date()) {
+  const d = (typeof date === 'string') ? new Date(date) : date;
+  return d.toLocaleDateString('en-CA');
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const date = new Date(dateStr + 'T00:00:00');
+  const clean = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  const date = new Date(clean + 'T00:00:00');
   return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 }
 
+function formatActivityTime(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
 function getTimeAgo(dateStr) {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
-  const seconds = Math.floor((new Date() - date) / 1000);
+  if (isNaN(date.getTime())) return '';
+  
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  
+  if (seconds < 60) return 'agora mesmo';
   
   let interval = Math.floor(seconds / 31536000);
   if (interval >= 1) return `há ${interval} ano${interval > 1 ? 's' : ''}`;
@@ -560,7 +579,7 @@ function renderLeadersPodium() {
   }
 
   // 4. Calculate TOP OF THE DAY (Relative Effort points for TODAY)
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  const todayStr = getLocalDateStr();
   const dailyPointsMap = {};
   
   state.participants.forEach(p => {
@@ -1582,22 +1601,25 @@ function renderRecentActivities() {
     if (act.type === 'pushup') {
       icon = 'dumbbell';
       const witnessText = act.validator ? ` • Testemunha: ${act.validator.name}` : '';
+      const timeText = act.created_at ? ` às ${formatActivityTime(act.created_at)}` : '';
       detailsText = `fez <strong>${act.amount} flexões</strong> de braço.`;
       subInfoHTML = `
-        <span><i data-lucide="calendar"></i> ${formatDate(act.date)} ${witnessText}</span>
+        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}${timeText}${witnessText}</span>
       `;
     } else if (act.type === 'running') {
       icon = 'footprints';
+      const timeText = act.created_at ? ` às ${formatActivityTime(act.created_at)}` : '';
       detailsText = `correu <strong>${act.amount} km</strong> em <strong>${formatDuration(act.duration)}</strong>.`;
       subInfoHTML = `
-        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}</span>
+        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}${timeText}</span>
         <span><i data-lucide="trending-up"></i> Pace: ${formatPace(act.pace)}</span>
       `;
     } else if (act.type === 'cycling') {
       icon = 'bike';
+      const timeText = act.created_at ? ` às ${formatActivityTime(act.created_at)}` : '';
       detailsText = `pedalou <strong>${act.amount} km</strong> em <strong>${formatDuration(act.duration)}</strong>.`;
       subInfoHTML = `
-        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}</span>
+        <span><i data-lucide="calendar"></i> ${formatDate(act.date)}${timeText}</span>
         <span><i data-lucide="zap"></i> Vel. Média: ${act.pace.toFixed(1)} km/h</span>
       `;
     }
@@ -2203,12 +2225,12 @@ async function initRaceControls(challenge) {
   // 1. Generate daily date array for the challenge
   state.raceDates = [];
   const start = new Date(challenge.start_date + 'T00:00:00');
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
   const end = new Date((challenge.status === 'active' && challenge.end_date > todayStr ? todayStr : challenge.end_date) + 'T00:00:00');
   
   let current = new Date(start);
   while (current <= end) {
-    state.raceDates.push(current.toISOString().split('T')[0]);
+    state.raceDates.push(getLocalDateStr(current));
     current.setDate(current.getDate() + 1);
   }
 
@@ -2644,7 +2666,7 @@ function initEvents() {
     el.logParticipantSelect().value = state.selectedParticipantId;
     
     // Set default date to today
-    el.logDateInput().value = new Date().toISOString().split('T')[0];
+    el.logDateInput().value = getLocalDateStr();
     
     // Open log activity modal
     toggleModal(el.modalLog(), true);
@@ -2684,7 +2706,7 @@ function initEvents() {
     }
     
     // Set default date to today
-    el.logDateInput().value = new Date().toISOString().split('T')[0];
+    el.logDateInput().value = getLocalDateStr();
     
     toggleModal(el.modalLog(), true);
   });
