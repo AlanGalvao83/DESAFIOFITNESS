@@ -39,24 +39,24 @@
       </div>
       <nav class="sidebar-menu">
         <button class="sidebar-link active" id="link-dashboard" type="button">
-          <i data-lucide="layout-dashboard"></i> <span class="link-text">Dashboard</span>
+          <i data-lucide="layout-dashboard"></i> <span class="link-text"><span class="desktop-nav-text">Dashboard</span><span class="mobile-nav-text">Dashboard</span></span>
         </button>
         <button class="sidebar-link" id="link-participants" type="button">
-          <i data-lucide="users"></i> <span class="link-text">Participantes</span>
+          <i data-lucide="users"></i> <span class="link-text"><span class="desktop-nav-text">Participantes</span><span class="mobile-nav-text">Atletas</span></span>
         </button>
         <button class="sidebar-link" id="link-race" type="button">
-          <i data-lucide="award"></i> <span class="link-text">Corrida Animada</span>
+          <i data-lucide="award"></i> <span class="link-text"><span class="desktop-nav-text">Corrida Animada</span><span class="mobile-nav-text">Corrida</span></span>
         </button>
         <button class="sidebar-link" id="link-history" type="button">
-          <i data-lucide="trending-up"></i> <span class="link-text">Evolução Geral</span>
+          <i data-lucide="trending-up"></i> <span class="link-text"><span class="desktop-nav-text">Evolução Geral</span><span class="mobile-nav-text">Evolução</span></span>
         </button>
         <button class="sidebar-link" id="link-pushup-ai" type="button">
-          <i data-lucide="scan-face"></i> <span class="link-text">Contador IA</span>
+          <i data-lucide="scan-face"></i> <span class="link-text"><span class="desktop-nav-text">Contador IA</span><span class="mobile-nav-text">IA Flexão</span></span>
         </button>
       </nav>
       <div class="sidebar-footer">
         <button class="btn-admin-trigger" id="btn-admin-trigger" aria-label="Área do Administrador">
-          <i data-lucide="shield"></i> <span id="admin-btn-text" class="link-text">Área do Admin</span>
+          <i data-lucide="shield"></i> <span id="admin-btn-text" class="link-text"><span class="desktop-nav-text">Área do Admin</span><span class="mobile-nav-text">Admin</span></span>
         </button>
         <button class="btn btn-sm admin-only" id="btn-reset-config" style="color: var(--text-muted); border-color: var(--border-color); display: none; width: 100%; margin-top: 0.5rem;" aria-label="Desconectar banco de dados">
           <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> <span class="link-text">Desconectar Banco</span>
@@ -802,7 +802,16 @@
         <div id="log-pushup-fields">
           <div class="form-group">
             <label for="pushups-count">Quantidade de Repetições</label>
-            <input type="number" id="pushups-count" min="1" placeholder="Ex: 40" required>
+            <div style="position: relative;">
+              <input type="number" id="pushups-count" min="1" placeholder="Ex: 40" required>
+              <div id="pushup-locked-indicator" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--accent-emerald); pointer-events: none;">
+                <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+              </div>
+            </div>
+            <div id="pushup-count-locked-badge" style="display: none; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--accent-emerald); margin-top: 0.4rem; font-weight: 600; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm);">
+              <i data-lucide="shield-check" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+              <span>Validado pela IA (bloqueado para alteração manual)</span>
+            </div>
           </div>
           <div class="form-group">
             <label for="log-validator">Testemunha / Validador (Opcional)</label>

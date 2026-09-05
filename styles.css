@@ -63,10 +63,16 @@
   background: var(--text-muted);
 }
 
+html {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
+  max-width: 100vw;
   overflow-x: hidden;
   position: relative;
   background-image: 
@@ -80,6 +86,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 header {
@@ -1632,6 +1640,8 @@ body.admin-active .admin-banner {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1669,6 +1679,14 @@ body.admin-active .admin-banner {
 .sidebar.collapsed .brand-text,
 .sidebar.collapsed .link-text {
   display: none !important;
+}
+
+.desktop-nav-text {
+  display: inline;
+}
+
+.mobile-nav-text {
+  display: none;
 }
 
 .sidebar.collapsed .sidebar-link {
@@ -2348,23 +2366,33 @@ body.admin-active .admin-banner {
     top: auto;
     left: 0;
     right: 0;
-    width: 100%;
+    width: 100vw;
+    max-width: 100%;
     height: 60px;
     flex-direction: row;
-    padding: 0.15rem 0.25rem;
+    padding: 0.15rem 0.2rem;
     border-right: none;
     border-top: 1px solid var(--border-color);
-    background: rgba(8, 11, 17, 0.94);
+    background: rgba(8, 11, 17, 0.96);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
     z-index: 999;
+    box-sizing: border-box;
   }
 
   .sidebar-brand {
     display: none !important;
+  }
+
+  .desktop-nav-text {
+    display: none !important;
+  }
+
+  .mobile-nav-text {
+    display: inline !important;
   }
 
   .sidebar-menu {
@@ -2372,17 +2400,18 @@ body.admin-active .admin-banner {
     gap: 0;
     flex: 5;
     justify-content: space-around;
+    min-width: 0;
   }
 
   .sidebar-link {
-    padding: 0.25rem 0.1rem;
+    padding: 0.2rem 0.05rem;
     font-size: 0.65rem;
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: 0.12rem;
     justify-content: center;
     width: 100%;
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
     border: none;
     background: transparent;
@@ -2391,16 +2420,19 @@ body.admin-active .admin-banner {
   .sidebar-link i {
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
   }
 
   .sidebar-link span {
-    font-size: 0.58rem;
-    font-weight: 500;
+    font-size: 0.56rem;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 58px;
+    width: 100%;
+    max-width: 100%;
     text-align: center;
+    line-height: 1.1;
   }
 
   .sidebar-footer {
@@ -2408,18 +2440,18 @@ body.admin-active .admin-banner {
     padding-top: 0;
     width: auto;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 0;
     flex-direction: row;
     justify-content: center;
     align-items: center;
   }
 
   .sidebar-footer .btn-admin-trigger {
-    padding: 0.25rem 0.1rem;
+    padding: 0.2rem 0.05rem;
     font-size: 0.65rem;
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: 0.12rem;
     justify-content: center;
     width: 100%;
     border: none;
@@ -2431,18 +2463,23 @@ body.admin-active .admin-banner {
     width: 18px;
     height: 18px;
     margin: 0 !important;
+    flex-shrink: 0;
   }
   
   .sidebar-footer .btn-admin-trigger span {
-    font-size: 0.58rem;
-    font-weight: 500;
+    font-size: 0.56rem;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 58px;
+    width: 100%;
+    max-width: 100%;
     text-align: center;
+    line-height: 1.1;
   }
   
+  body.admin-active .sidebar-footer .btn-reset-config,
+  body.admin-active button.btn-reset-config,
   .sidebar-footer .btn-reset-config {
     display: none !important;
   }
@@ -3005,4 +3042,159 @@ body.admin-active .admin-banner {
   background: linear-gradient(135deg, rgba(22, 29, 47, 0.6) 0%, rgba(139, 92, 246, 0.08) 100%);
   border-color: rgba(139, 92, 246, 0.3);
 }
+
+/* ==================================================== */
+/* Pushup AI & Mobile Layout Responsiveness            */
+/* ==================================================== */
+
+@media (max-width: 1024px) {
+  .pushup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  #section-pushup-ai {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .pushup-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .pushup-video-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .video-canvas-wrapper {
+    aspect-ratio: auto;
+    width: 100%;
+    height: 52vh;
+    max-height: 480px;
+    min-height: 280px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  #pushup-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .pushup-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pushup-controls .timeline-container {
+    order: 1;
+    width: 100%;
+    flex: 1 1 100%;
+    margin-bottom: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  .pushup-controls .btn-ctrl,
+  .pushup-controls .speed-control,
+  .pushup-controls .btn-change-video {
+    order: 2;
+  }
+
+  .pushup-controls .btn-change-video {
+    margin-left: auto;
+  }
+
+  .pushup-metrics-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .metric-card {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pushup-ai-header {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .pushup-ai-title {
+    font-size: 1.25rem;
+  }
+
+  .pushup-ai-desc {
+    font-size: 0.8rem;
+  }
+
+  .pushup-ai-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .pushup-ai-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pushup-dropzone {
+    padding: 2.5rem 1rem;
+  }
+
+  .dropzone-inner h3 {
+    font-size: 1.1rem;
+  }
+
+  .rep-number {
+    font-size: 3.2rem;
+  }
+
+  .angles-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.5rem;
+  }
+
+  .angle-box {
+    padding: 0.5rem 0.2rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .angle-label {
+    font-size: 0.62rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .angle-value {
+    font-size: 0.95rem;
+  }
+}
+
 

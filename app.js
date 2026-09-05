@@ -366,6 +366,9 @@ function toggleModal(modal, show) {
     modal.classList.add('active');
   } else {
     modal.classList.remove('active');
+    if (modal === el.modalLog()) {
+      resetPushupInputLock();
+    }
   }
 }
 
@@ -375,12 +378,50 @@ function toggleModal(modal, show) {
 function updateAdminUI() {
   if (state.isAdmin) {
     document.body.classList.add('admin-active');
-    el.adminBtnText().textContent = 'Sair do Admin';
+    if (el.adminBtnText()) {
+      el.adminBtnText().innerHTML = '<span class="desktop-nav-text">Sair do Admin</span><span class="mobile-nav-text">Sair</span>';
+    }
   } else {
     document.body.classList.remove('admin-active');
-    el.adminBtnText().textContent = 'Área do Admin';
+    if (el.adminBtnText()) {
+      el.adminBtnText().innerHTML = '<span class="desktop-nav-text">Área do Admin</span><span class="mobile-nav-text">Admin</span>';
+    }
   }
   lucide.createIcons();
+}
+
+function lockPushupInput(count) {
+  const pushupInput = document.getElementById('pushups-count');
+  if (pushupInput) {
+    pushupInput.value = count;
+    pushupInput.readOnly = true;
+    pushupInput.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+    pushupInput.style.borderColor = 'var(--accent-emerald)';
+    pushupInput.style.color = '#10b981';
+    pushupInput.style.fontWeight = '700';
+    pushupInput.style.cursor = 'not-allowed';
+  }
+  const lockedBadge = document.getElementById('pushup-count-locked-badge');
+  if (lockedBadge) lockedBadge.style.display = 'flex';
+  const lockedIndicator = document.getElementById('pushup-locked-indicator');
+  if (lockedIndicator) lockedIndicator.style.display = 'block';
+  lucide.createIcons();
+}
+
+function resetPushupInputLock() {
+  const pushupInput = document.getElementById('pushups-count');
+  if (pushupInput) {
+    pushupInput.readOnly = false;
+    pushupInput.style.backgroundColor = '';
+    pushupInput.style.borderColor = '';
+    pushupInput.style.color = '';
+    pushupInput.style.fontWeight = '';
+    pushupInput.style.cursor = '';
+  }
+  const lockedBadge = document.getElementById('pushup-count-locked-badge');
+  if (lockedBadge) lockedBadge.style.display = 'none';
+  const lockedIndicator = document.getElementById('pushup-locked-indicator');
+  if (lockedIndicator) lockedIndicator.style.display = 'none';
 }
 
 async function checkAdminCredentialsStatus() {
@@ -1978,9 +2019,9 @@ function switchSection(sectionId) {
   el.sectionHistory().classList.toggle('active', sectionId === 'history');
   if (el.sectionPushupAI()) el.sectionPushupAI().classList.toggle('active', sectionId === 'pushup-ai');
 
-  // If leaving pushup-ai section, pause video if playing
+  // If leaving pushup-ai section, completely clean up video, camera and stats
   if (sectionId !== 'pushup-ai') {
-    pausePushupVideo();
+    clearPushupAI();
   }
 
   // Control top header and mobile header profile visibility
@@ -2671,6 +2712,8 @@ function initEvents() {
   el.btnDetailsAddActivity().addEventListener('click', () => {
     if (!state.isAdmin || !state.selectedParticipantId) return;
     
+    resetPushupInputLock();
+
     // Select the current participant in the log activity form
     el.logParticipantSelect().value = state.selectedParticipantId;
     
@@ -2714,6 +2757,8 @@ function initEvents() {
       return;
     }
     
+    resetPushupInputLock();
+
     // Set default date to today
     el.logDateInput().value = getLocalDateStr();
     
@@ -2795,8 +2840,13 @@ function initEvents() {
       document.getElementById('running-min').value = '';
       document.getElementById('running-sec').value = '';
       
+      resetPushupInputLock();
       toggleModal(el.modalLog(), false);
       showToast('Treino registrado com sucesso!');
+      
+      // Clean up Pushup AI video, camera, and stats
+      clearPushupAI();
+
       await refreshData();
     } catch (err) {
       console.error(err);
@@ -3063,6 +3113,32 @@ function pausePushupVideo() {
     cancelAnimationFrame(state.pushupAI.animationFrameId);
     state.pushupAI.animationFrameId = null;
   }
+}
+
+function clearPushupAI() {
+  pausePushupVideo();
+  stopPushupCamera();
+  const video = el.pushupVideo();
+  if (video) {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
+  const canvas = el.pushupCanvas();
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  if (el.pushupVideoInput()) el.pushupVideoInput().value = '';
+  if (el.pushupVideoInputDrop()) el.pushupVideoInputDrop().value = '';
+  if (el.pushupTimeline()) el.pushupTimeline().value = 0;
+  if (el.pushupTimeDisplay()) el.pushupTimeDisplay().textContent = '00:00 / 00:00';
+  
+  resetPushupStats();
+
+  if (el.pushupWorkspace()) el.pushupWorkspace().style.display = 'none';
+  if (el.pushupDropzone()) el.pushupDropzone().style.display = 'block';
+  if (el.pushupLoadingOverlay()) el.pushupLoadingOverlay().style.display = 'none';
 }
 
 function updatePlayPauseButtonUI(isPlaying) {
@@ -3545,11 +3621,7 @@ function initPushupAIEvents() {
   });
 
   el.btnChangeVideo()?.addEventListener('click', () => {
-    pausePushupVideo();
-    stopPushupCamera();
-    resetPushupStats();
-    if (el.pushupWorkspace()) el.pushupWorkspace().style.display = 'none';
-    if (el.pushupDropzone()) el.pushupDropzone().style.display = 'block';
+    clearPushupAI();
   });
 
   el.btnPushupRegister()?.addEventListener('click', () => {
@@ -3569,11 +3641,8 @@ function initPushupAIEvents() {
       el.logTypeSelect().value = 'pushup';
       el.logTypeSelect().dispatchEvent(new Event('change'));
     }
-    const pushupInput = document.getElementById('pushups-count');
-    if (pushupInput) {
-      pushupInput.value = count;
-    }
-    showToast(`Total de ${count} flexões pré-preenchido! Selecione o atleta para salvar.`);
+    lockPushupInput(count);
+    showToast(`Total de ${count} flexões carregado da IA e bloqueado para alteração.`);
   });
 }
 
